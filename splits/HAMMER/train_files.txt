@@ -3,7 +3,6 @@ scene10_traj2_1
 scene11_traj_1
 scene11_traj1_1
 scene11_traj2_1
-scene2_traj1_1
 scene2_traj1_2
 scene2_traj2_1
 scene2_traj2_2
