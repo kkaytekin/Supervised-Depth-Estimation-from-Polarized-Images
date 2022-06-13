@@ -20,11 +20,11 @@ from .indoor_dataset import IndoorDataset
 
 cv2.setNumThreads(0)
 
-class ECCVDEPTHDataset(IndoorDataset):
+class HAMMER_Dataset(IndoorDataset):
     """Superclass for different types of KITTI dataset loaders
     """
     def __init__(self, *args, **kwargs):
-        super(ECCVDEPTHDataset, self).__init__(*args, **kwargs)
+        super(HAMMER_Dataset, self).__init__(*args, **kwargs)
 
         # NOTE: Make sure your intrinsics matrix is *normalized* by the original image size
         # self.K = np.array([[0.58, 0, 0.5, 0],
@@ -51,6 +51,7 @@ class ECCVDEPTHDataset(IndoorDataset):
         """Convert index in the dataset to a folder name, frame_idx and any other bits
         """
         line = self.filenames[index].split('/')
+        # print(line)
         folder = '/'+os.path.join(*line[1:-2])
         frame_index = int(line[-1].split('.')[0])
         return folder, frame_index
