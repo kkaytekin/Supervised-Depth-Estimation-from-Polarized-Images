@@ -141,27 +141,30 @@ class Trainer:
             self.parameters_to_train += list(self.models["gwc_net"].parameters())
 
         elif self.opt.train_dpt:
-            net_w = self.opt.width
-            net_h = self.opt.height
-            # model = dpt.DPTDepthModel(
-            #     path=None,
-            #     backbone="vitl16_384",
-            #     non_negative=True,
-            #     enable_attention_hooks=False,
-            #     invert=False
-            # )
+            if self.opt.midas:
+                model = dpt.MidasNet_large(None, non_negative=True)
+            else:
+                net_w = self.opt.width
+                net_h = self.opt.height
+                # model = dpt.DPTDepthModel(
+                #     path=None,
+                #     backbone="vitl16_384",
+                #     non_negative=True,
+                #     enable_attention_hooks=False,
+                #     invert=False
+                # )
 
-            model = dpt.DPTDepthModel(
-                    path=None,
-                    backbone="vitb_rn50_384",
-                    non_negative=True,
-                    enable_attention_hooks=False,
-                    invert=False
-                )
+                model = dpt.DPTDepthModel(
+                        path=None,
+                        backbone="vitb_rn50_384",
+                        non_negative=True,
+                        enable_attention_hooks=False,
+                        invert=False
+                    )
 
 
 
-            # model = dpt.MidasNet_large(None, non_negative=True)
+
 
             self.models["dpt"] = model
             self.models["dpt"].to(self.device)
@@ -233,7 +236,7 @@ class Trainer:
         datasets_dict = {"kitti": datasets.KITTIRAWDataset,
                          "cityscapes_preprocessed": datasets.CityscapesPreprocessedDataset,
                          "kitti_odom": datasets.KITTIOdomDataset,
-                         "eccv_depth": datasets.ECCVDEPTHDataset}
+                         "HAMMER": datasets.HAMMER_Dataset}
         self.dataset = datasets_dict[self.opt.dataset]
 
         fpath = os.path.join("splits", self.opt.split, "{}_files.txt")
@@ -252,13 +255,15 @@ class Trainer:
 
         train_dataset = self.dataset(
             self.data_path, train_filenames, self.opt.height, self.opt.width,
-            frames_to_load, 4, is_train=True, img_ext=img_ext, offset=self.opt.offset, modality=self.opt.modality, supervised_depth=self.opt.depth_supervision, supervised_depth_only=self.opt.depth_supervision_only, depth_modality=self.opt.depth_modality)
+            frames_to_load, 4, is_train=True, img_ext=img_ext, offset=self.opt.offset, modality=self.opt.modality,
+            supervised_depth=self.opt.depth_supervision, supervised_depth_only=self.opt.depth_supervision_only,
+            depth_modality=self.opt.depth_modality)
         self.train_loader = DataLoader(
             train_dataset, self.opt.batch_size, True,
             num_workers=self.opt.num_workers, pin_memory=True, drop_last=True,
             worker_init_fn=seed_worker)
         val_dataset = self.dataset(
-            self.data_path_val, val_filenames, self.opt.height, self.opt.width,
+            self.data_path, val_filenames, self.opt.height, self.opt.width,
             frames_to_load, 4, is_train=False, img_ext=img_ext, offset=self.opt.offset, modality=self.opt.modality, supervised_depth=self.opt.depth_supervision, supervised_depth_only=self.opt.depth_supervision_only, depth_modality=self.opt.depth_modality)
         self.val_loader = DataLoader(
             val_dataset, self.opt.batch_size, False,
