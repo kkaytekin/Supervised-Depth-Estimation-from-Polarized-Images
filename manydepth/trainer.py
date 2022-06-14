@@ -243,12 +243,16 @@ class Trainer:
 
         fpath_test = os.path.join("splits", self.opt.eval_split, "{}_files.txt")
 
-        test_filenames = readlines(fpath_test.format("test"))
+        if self.opt.overfit:
+            print("OVERFITTING")
+            test_filenames = "scene2_traj1_2"
+            train_filenames = "scene2_traj1_2"
+            val_filenames = "scene2_traj1_2"
+        else:
+            test_filenames = readlines(fpath_test.format("test"))
+            train_filenames = readlines(fpath.format("train"))
+            val_filenames = readlines(fpath.format("val"))
 
-
-
-        train_filenames = readlines(fpath.format("train"))
-        val_filenames = readlines(fpath.format("val"))
         img_ext = '.png' #if self.opt.png else '.jpg'
 
 
