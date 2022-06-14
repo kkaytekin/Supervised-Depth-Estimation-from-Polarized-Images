@@ -143,6 +143,7 @@ class IndoorDataset(data.Dataset):
 
         secquences_filtered = [item for sublist in secquences_filtered for item in sublist]
 
+        # print(secquences_filtered)
         filenames_in_sec_valid = []
         if len(secquences_filtered) > 0:
             filenames_in_sec = (secquences_filtered)
@@ -183,6 +184,7 @@ class IndoorDataset(data.Dataset):
         for file in filenames_out:
             if not os.path.isfile(file):
                 print("ERROR FOR FILE:", file)
+        # print(filenames_out)
         return filenames_out
 
     def preprocess(self, inputs, do_color_aug, color_aug):
@@ -207,7 +209,7 @@ class IndoorDataset(data.Dataset):
                 if inputs[(n, im, i)].sum() == 0:
                     inputs[(n + "_aug", im, i)] = inputs[(n, im, i)]
                 else:
-                    if do_color_aug is not None:
+                    if do_color_aug:
 
                         aug = color_aug(f)
                     else:
@@ -335,8 +337,8 @@ class IndoorDataset(data.Dataset):
                 inputs["depth_gt"] = torch.from_numpy(inputs["depth_gt"].astype(np.float32))#.clamp(0.01, 2.0)
 
 
-            if self.load_mask:
-                inputs["mask"] = self.get_mask(folder, frame_index, side, do_flip)
+            # if self.load_mask:
+            #     inputs["mask"] = self.get_mask(folder, frame_index, side, do_flip)
 
 
             transforms.ColorJitter.get_params(
