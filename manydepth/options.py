@@ -206,6 +206,10 @@ class MonodepthOptions:
                                  type=bool,
                                  help="activates overfitting to a single scene",
                                  default=False)
+        self.parser.add_argument("--overfit_scene",
+                                 type=str,
+                                 help="scene to overfit",
+                                 default="scene2_traj1_2")
 
         # OPTIMIZATION options
         self.parser.add_argument("--batch_size",

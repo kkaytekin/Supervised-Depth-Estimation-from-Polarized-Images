@@ -245,8 +245,8 @@ class Trainer:
 
         if self.opt.overfit:
             print("OVERFITTING")
-            train_filenames = ["scene2_traj1_2"]
-            val_filenames = ["scene2_traj1_2"]
+            train_filenames = [self.opt.overfit_scene]
+            val_filenames = [self.opt.overfit_scene]
         else:
             train_filenames = readlines(fpath.format("train"))
             val_filenames = readlines(fpath.format("val"))
