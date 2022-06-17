@@ -251,7 +251,7 @@ class Trainer:
         else:
             train_filenames = readlines(fpath.format("train"))
             val_filenames = readlines(fpath.format("val"))
-            test_filenames = readlines(fpath.format("test"))
+            test_filenames = readlines(fpath_test.format("test"))
             
         img_ext = '.png' #if self.opt.png else '.jpg'
 
@@ -758,7 +758,7 @@ class Trainer:
             preds_mono = []
             # print(self.test_loader.__len__)
             for batch_idx, inputs in enumerate(self.test_loader):
-                # print(batch_idx)
+                # print("batch_idx: ", batch_idx)
                 for key, ipt in inputs.items():
                     inputs[key] = ipt.to(self.device)
 
@@ -869,6 +869,9 @@ class Trainer:
             del losses
             losses = {}
             print("MONO Depth Test:")
+
+            print("preds_mono HERE: ", preds_mono)
+
             self.compute_depth_losses_from_list(gts, preds_mono, losses)
             self.log("test_mono", inputs, outputs, losses, log_images=False)
 
@@ -1242,6 +1245,11 @@ class Trainer:
         This isn't particularly accurate as it averages over the entire batch,
         so is only used to give an indication of validation performance
         """
+
+        # print("gts: ", gts)
+        # print("preds: ", preds)
+        # print("losses: ", losses)
+
         errors = []
         MIN_DEPTH = self.opt.min_depth
         MAX_DEPTH = self.opt.max_depth
@@ -1303,7 +1311,10 @@ class Trainer:
 
                 errors.append(depth_errors)
 
+        # print("errors: ", errors)
+
         mean_errors = np.array(errors).mean(0)
+        # print("mean_errors: ", mean_errors)
 
         print("\n  " + ("{:>8} | " * 7).format("abs_rel", "sq_rel", "rmse", "rmse_log", "a1", "a2", "a3"))
         print(("&{: 8.5f}  " * 7).format(*mean_errors.tolist()) + "\\\\")
