@@ -115,7 +115,7 @@ class IndoorDataset(data.Dataset):
     def get_filenames(self, secquences, frame_idxs, offset, modality, depth_modality):
         filenames = []
 
-        input_lookup = "rgb"
+        input_lookup = "pol"
         if modality == "d435":
             input_lookup = "no_proj_left"
         secquences_filtered = []
