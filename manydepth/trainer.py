@@ -247,11 +247,12 @@ class Trainer:
             print("OVERFITTING")
             train_filenames = [self.opt.overfit_scene]
             val_filenames = [self.opt.overfit_scene]
+            test_filenames = [self.opt.overfit_scene]
         else:
             train_filenames = readlines(fpath.format("train"))
             val_filenames = readlines(fpath.format("val"))
-
-        test_filenames = readlines(fpath_test.format("test"))
+            test_filenames = readlines(fpath.format("test"))
+            
         img_ext = '.png' #if self.opt.png else '.jpg'
 
 
