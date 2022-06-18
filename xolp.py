@@ -101,18 +101,18 @@ def main():
     n = 1.5
 
     # img_example = torch.from_numpy(img_example)
-    # print(img_example.shape) # [1664, 2176, 1]
+    # print(img_example.shape) # [1664, 2176]
     im0, im45, im90, im135 = split_pol(img_example)
-    # print(im0.shape) # [832, 1088, 1]
+    # print(im0.shape) # [832, 1088]
     im_stack = stack_pol(im0, im45, im90, im135) # [832, 1088, 4]
     # print(im_stack.shape)
     # plt.imshow(im0)
     # plt.show()
 
     Iun, rho, phi, = PolarisationImage_ls(im_stack, angles)
-    # print(Iun.shape)
-    # print(rho.shape)
-    # print(phi.shape)
+    # print(Iun.shape) # [832, 1088]
+    # print(rho.shape) # [832, 1088]
+    # print(phi.shape) # [832, 1088]
     # plt.imshow(phi)
     # plt.show()
 
@@ -122,9 +122,9 @@ def main():
     N_spec1 = calc_normals_ls(phi + np.pi / 2, theta_spec1)
     N_spec2 = calc_normals_ls(phi + np.pi / 2, theta_spec2)
 
-    print(N_diff.shape)
-    print(N_spec1.shape)
-    print(N_spec2.shape)
+    # print(N_diff.shape) # [832, 1088, 3]
+    # print(N_spec1.shape) # [832, 1088, 3]
+    # print(N_spec2.shape) [# 832, 1088, 3]
 
 if __name__ == "__main__":
     main()
