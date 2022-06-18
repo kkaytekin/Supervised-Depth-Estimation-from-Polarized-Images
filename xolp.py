@@ -1,9 +1,8 @@
 from split_pol import split_pol, stack_pol
 
 import numpy as np
-import  cv2
-import scipy
-import torch
+import cv2
+import scipy.interpolate
 import matplotlib.pyplot as plt
 
 
@@ -117,12 +116,15 @@ def main():
     # plt.imshow(phi)
     # plt.show()
 
-    # theta_diff = rho_diffuse_ls(rho, n)
-    # theta_spec1, theta_spec2 = rho_spec_ls(rho, n)
-    # N_diff = calc_normals_ls(phi, theta_diff)
-    # N_spec1 = calc_normals_ls(phi + np.pi / 2, theta_spec1)
-    # N_spec2 = calc_normals_ls(phi + np.pi / 2, theta_spec2)
+    theta_diff = rho_diffuse_ls(rho, n)
+    theta_spec1, theta_spec2 = rho_spec_ls(rho, n)
+    N_diff = calc_normals_ls(phi, theta_diff)
+    N_spec1 = calc_normals_ls(phi + np.pi / 2, theta_spec1)
+    N_spec2 = calc_normals_ls(phi + np.pi / 2, theta_spec2)
 
+    print(N_diff.shape)
+    print(N_spec1.shape)
+    print(N_spec2.shape)
 
 if __name__ == "__main__":
     main()
