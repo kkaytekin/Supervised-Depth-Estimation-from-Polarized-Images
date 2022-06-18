@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 
 
-def PolarisationImage_ls(images, angles):
+def Iun_and_xolp(images, angles):
     """
     :param images: 4 concatenate images with different polarisation filters
     :param angles: angles of the polarisation filters
@@ -35,7 +35,7 @@ def PolarisationImage_ls(images, angles):
     phi = np.reshape(phi, (images.shape[0], images.shape[1]))
     return Iun, rho, phi
 
-def rho_spec_ls(rho, n):
+def rho_spec(rho, n):
     """
     :param rho: DOLP
     :param n: refractive index
@@ -63,7 +63,7 @@ def rho_spec_ls(rho, n):
     theta2 = scipy.interpolate.interp1d(rho_s2, theta_s2, fill_value="extrapolate")(rho)
     return theta1, theta2
 
-def rho_diffuse_ls(rho, n):
+def rho_diffuse(rho, n):
     """
     :param rho: DOLP
     :param n: refractive index
@@ -79,7 +79,7 @@ def rho_diffuse_ls(rho, n):
     theta = scipy.interpolate.interp1d(rho_d, theta_d, fill_value="extrapolate")(rho)
     return theta
 
-def calc_normals_ls(phi, theta):
+def calc_normals(phi, theta):
     """
     :param phi: AOLP
     :param theta: viewing angle (theta_s1 or theta_s2 or theta_d)
@@ -104,27 +104,27 @@ def main():
     # print(img_example.shape) # [1664, 2176]
     im0, im45, im90, im135 = split_pol(img_example)
     # print(im0.shape) # [832, 1088]
-    im_stack = stack_pol(im0, im45, im90, im135) # [832, 1088, 4]
-    # print(im_stack.shape)
+    im_stack = stack_pol(im0, im45, im90, im135)
+    # print(im_stack.shape) # [832, 1088, 4]
     # plt.imshow(im0)
     # plt.show()
 
-    Iun, rho, phi, = PolarisationImage_ls(im_stack, angles)
+    Iun, rho, phi, = Iun_and_xolp(im_stack, angles)
     # print(Iun.shape) # [832, 1088]
     # print(rho.shape) # [832, 1088]
     # print(phi.shape) # [832, 1088]
     # plt.imshow(phi)
     # plt.show()
 
-    theta_diff = rho_diffuse_ls(rho, n)
-    theta_spec1, theta_spec2 = rho_spec_ls(rho, n)
-    N_diff = calc_normals_ls(phi, theta_diff)
-    N_spec1 = calc_normals_ls(phi + np.pi / 2, theta_spec1)
-    N_spec2 = calc_normals_ls(phi + np.pi / 2, theta_spec2)
+    theta_diff = rho_diffuse(rho, n)
+    theta_spec1, theta_spec2 = rho_spec(rho, n)
+    N_diff = calc_normals(phi, theta_diff)
+    N_spec1 = calc_normals(phi + np.pi / 2, theta_spec1)
+    N_spec2 = calc_normals(phi + np.pi / 2, theta_spec2)
 
     # print(N_diff.shape) # [832, 1088, 3]
     # print(N_spec1.shape) # [832, 1088, 3]
-    # print(N_spec2.shape) [# 832, 1088, 3]
+    # print(N_spec2.shape) # [832, 1088, 3]
 
 if __name__ == "__main__":
     main()
