@@ -60,7 +60,7 @@ class IndoorDataset(data.Dataset):
         self.depth_modality = depth_modality
 
 
-        self.input_lookup = "rgb"
+        self.input_lookup = "pol"
         if modality == "d435":
             self.input_lookup = "no_proj_left"
 
