@@ -9,7 +9,8 @@ os.environ["MKL_NUM_THREADS"] = "1"  # noqa F402
 os.environ["NUMEXPR_NUM_THREADS"] = "1"  # noqa F402
 os.environ["OMP_NUM_THREADS"] = "1"  # noqa F402
 
-
+import logging
+from datetime import datetime
 
 import numpy as np
 import time
@@ -80,11 +81,16 @@ class Trainer:
         self.data_path = self.opt.data_path
         self.data_path_val = self.opt.data_path_val
         self.log_dir = self.opt.log_dir
-        self.log_path = os.path.join(self.opt.log_dir, self.opt.model_name)
+
+        timestamp = datetime.now()
+        self.log_path = os.path.join(self.opt.log_dir,
+                                     self.opt.model_name+'_'+timestamp.strftime("%m-%d_%H:%M:%S"))
+        self.log_args(timestamp)
 
         print('Start training ...')
-        print('Use GPU: ' + str(torch.cuda.get_device_name(torch.cuda.current_device())))
-        print('With GB: ' + str(torch.cuda.get_device_properties(torch.cuda.current_device()).total_memory // 1024 ** 3))
+        if torch.cuda.is_available():
+            print('Use GPU: ' + str(torch.cuda.get_device_name(torch.cuda.current_device())))
+            print('With GB: ' + str(torch.cuda.get_device_properties(torch.cuda.current_device()).total_memory // 1024 ** 3))
 
         print('Use batch size: ', self.opt.batch_size)
 
@@ -320,6 +326,18 @@ class Trainer:
             len(train_dataset), len(val_dataset), len(test_dataset)))
 
         self.save_opts()
+
+    def log_args(self,timestamp):
+        # Dump the passed arguments into a log file
+        os.makedirs(self.log_path, exist_ok=True)
+        logging.basicConfig(filename=os.path.join(self.log_path,'args.log'),
+                            level=logging.INFO,
+                            format='%(message)s',
+                            )
+        logging.info('Run started at: %s',str(timestamp))
+        logging.info('='*8+'Arguments'+'='*9)
+        for arg, value in sorted(vars(self.opt).items()):
+            logging.info("%s: %r", arg, value)
 
     def set_train(self):
         """Convert all models to training mode
