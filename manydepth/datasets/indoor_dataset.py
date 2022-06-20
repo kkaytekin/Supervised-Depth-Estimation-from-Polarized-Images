@@ -45,6 +45,7 @@ class IndoorDataset(data.Dataset):
                  # modality="l515_rgbd",
                  # modality="d435",
                  modality="polarization",
+                 input_lookup="pol",
                  is_train=False,
                  img_ext='.png',
                  supervised_depth=False,
@@ -60,7 +61,8 @@ class IndoorDataset(data.Dataset):
         self.depth_modality = depth_modality
 
 
-        self.input_lookup = "pol"
+        # self.input_lookup = "pol"
+        self.input_lookup = input_lookup
         if modality == "d435":
             self.input_lookup = "no_proj_left"
 

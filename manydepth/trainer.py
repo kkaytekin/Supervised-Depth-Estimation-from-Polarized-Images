@@ -257,15 +257,21 @@ class Trainer:
 
 
 
-        train_dataset = self.dataset(
+        train_dataset00 = self.dataset(
             self.data_path, train_filenames, self.opt.height, self.opt.width,
             frames_to_load, 4, is_train=True, img_ext=img_ext, offset=self.opt.offset, modality=self.opt.modality,
+            input_lookup="pol00",
             supervised_depth=self.opt.depth_supervision, supervised_depth_only=self.opt.depth_supervision_only,
             depth_modality=self.opt.depth_modality)
+        train_dataset = train_dataset00
+
+
+        print("TRAIN DATASET LENGTH: ", len(train_dataset))
         self.train_loader = DataLoader(
             train_dataset, self.opt.batch_size, True,
             num_workers=self.opt.num_workers, pin_memory=True, drop_last=True,
             worker_init_fn=seed_worker)
+
         val_dataset = self.dataset(
             self.data_path, val_filenames, self.opt.height, self.opt.width,
             frames_to_load, 4, is_train=False, img_ext=img_ext, offset=self.opt.offset, modality=self.opt.modality, supervised_depth=self.opt.depth_supervision, supervised_depth_only=self.opt.depth_supervision_only, depth_modality=self.opt.depth_modality)
