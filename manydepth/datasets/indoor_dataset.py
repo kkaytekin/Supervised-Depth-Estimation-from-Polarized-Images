@@ -222,7 +222,6 @@ class IndoorDataset(data.Dataset):
         return len(self.filenames)
 
     def load_intrinsics(self, folder):
-        print(self.full_res_shape)
         K = np.array([[0.58, 0, 0.5, 0],
                            [0, 0.60, 0.5, 0],
                            [0, 0, 1, 0],
@@ -259,6 +258,8 @@ class IndoorDataset(data.Dataset):
             2       images resized to (self.width // 4, self.height // 4)
             3       images resized to (self.width // 8, self.height // 8)
         """
+
+        # IMPORTANT: in the current version of DepthFromPol, just 0 scale is used
         try:
         # if 0 == 0:
             inputs = {}
@@ -280,11 +281,17 @@ class IndoorDataset(data.Dataset):
                             folder, frame_index + i * self.frame_offset, None, do_flip, self.input_lookup, "00")
                         im10 = self.get_color(
                             folder, frame_index + i * self.frame_offset, None, do_flip, self.input_lookup, "10")
+                        im01 = self.get_color(
+                            folder, frame_index + i * self.frame_offset, None, do_flip, self.input_lookup, "01")
+                        im11 = self.get_color(
+                            folder, frame_index + i * self.frame_offset, None, do_flip, self.input_lookup, "11")
                         im00 = np.asarray(im00)
                         im10 = np.asarray(im10)
-                        image = np.concatenate((im00, im10), axis=2)
-                        inputs[("color", i, 0)] = image
-                        inputs[("color_aug", i, 0)] = image # tmp (needed because other parts of the code use color_aug)
+                        im01= np.asarray(im01)
+                        im11 = np.asarray(im11)
+                        images = np.concatenate((im00, im10, im01, im11), axis=2)
+                        inputs[("color", i, 0)] = images
+                        inputs[("color_aug", i, 0)] = images # tmp (needed because other parts of the code use color_aug)
 
                         # inputs[("color", i, -1)] = self.get_color(
                         #     folder, frame_index, other_side, do_flip, self.input_lookup,
@@ -296,11 +303,17 @@ class IndoorDataset(data.Dataset):
                                 folder, frame_index + i * self.frame_offset, None, do_flip, self.input_lookup, "00")
                             im10 = self.get_color(
                                 folder, frame_index + i * self.frame_offset, None, do_flip, self.input_lookup, "10")
+                            im01 = self.get_color(
+                                folder, frame_index + i * self.frame_offset, None, do_flip, self.input_lookup, "01")
+                            im11 = self.get_color(
+                                folder, frame_index + i * self.frame_offset, None, do_flip, self.input_lookup, "11")
                             im00 = np.asarray(im00)
                             im10 = np.asarray(im10)
-                            image = np.concatenate((im00, im10), axis=2)
-                            inputs[("color", i, 0)] = image
-                            inputs[("color_aug", i, 0)] = image  # tmp (needed because other parts of the code use color_aug)
+                            im01 = np.asarray(im01)
+                            im11 = np.asarray(im11)
+                            images = np.concatenate((im00, im10, im01, im11), axis=2)
+                            inputs[("color", i, 0)] = images
+                            inputs[("color_aug", i, 0)] = images  # tmp (needed because other parts of the code use color_aug)
 
                             # inputs[("color", i, -1)] = self.get_color(
                             #     folder, frame_index + i * self.frame_offset, None, do_flip, self.input_lookup, "11")
