@@ -245,6 +245,10 @@ class Trainer:
             frames_to_load, 4, is_train=True, img_ext=img_ext, offset=self.opt.offset, modality=self.opt.modality,
             supervised_depth=self.opt.depth_supervision, supervised_depth_only=self.opt.depth_supervision_only,
             depth_modality=self.opt.depth_modality)
+        for key, value in train_dataset[0].items():
+            print(key)
+
+        print("DIMENSION: ", train_dataset[0][('color', 0, 0)].shape)
 
         # print("TRAIN DATASET LENGTH: ", len(train_dataset))
         self.train_loader = DataLoader(

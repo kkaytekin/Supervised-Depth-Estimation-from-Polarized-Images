@@ -69,7 +69,8 @@ class IndoorDataset(data.Dataset):
         self.data_path = data_path
         self.secquences = secquences
         self.modality = modality
-        self.filenames = self.get_filenames(self.secquences, frame_idxs, offset, modality, depth_modality, self.input_lookup, self.filter)
+        self.filenames = self.get_filenames(self.secquences, frame_idxs, offset, modality, depth_modality,
+                                            self.input_lookup, self.filter)
         self.height = height
         self.width = width
         self.num_scales = num_scales
@@ -116,108 +117,112 @@ class IndoorDataset(data.Dataset):
 
     def get_filenames(self, secquences, frame_idxs, offset, modality, depth_modality, input_lookup, filter):
         filenames = []
+        filters = ["00", "10", "01", "11"]
+        for filter in filters:
+            secquences_filtered = []
+            for i in range(len(secquences)):
+                folder = os.path.join(self.data_path, secquences[i], modality, input_lookup, filter)
+                filenames_in_sec = sorted(glob.glob(folder + '/*.png'))
+                new_secquence = []
+                old_frame_index = 1
+                for k in range(len(filenames_in_sec)): #scene1_traj1_2/polarization/pol2/00/*.png
+                    line = filenames_in_sec[k].split('/')
+                    frame_index = int(line[-1].split('.')[0]) #just number of the image 000000
+                    f_str = "{:06d}{}".format(frame_index, self.img_ext) #000000.png
+                    file = os.path.join(folder, f_str) #scene1_traj1_2/polarization/pol2/00/000000.png
+                    old_frame_index += 1
+                    if os.path.isfile(file) and frame_index == old_frame_index:
+                        new_secquence.append(filenames_in_sec[k])
+                    else:
+                        secquences_filtered.append(new_secquence)
+                        new_secquence = []
 
-        secquences_filtered = []
-        for i in range(len(secquences)):
-            folder = os.path.join(self.data_path, secquences[i], modality, input_lookup, filter)
-            filenames_in_sec = sorted(glob.glob(folder + '/*.png'))
-            new_secquence = []
-            old_frame_index = 1
-            for k in range(len(filenames_in_sec)): #scene1_traj1_2/polarization/pol2/00/*.png
-                line = filenames_in_sec[k].split('/')
-                frame_index = int(line[-1].split('.')[0]) #just number of the image 000000
-                f_str = "{:06d}{}".format(frame_index, self.img_ext) #000000.png
-                file = os.path.join(folder, f_str) #scene1_traj1_2/polarization/pol2/00/000000.png
-                old_frame_index += 1
-                if os.path.isfile(file) and frame_index == old_frame_index:
-                    new_secquence.append(filenames_in_sec[k])
-                else:
-                    secquences_filtered.append(new_secquence)
-                    new_secquence = []
+                    old_frame_index = frame_index
 
-                old_frame_index = frame_index
+                secquences_filtered.append(new_secquence)
 
-            secquences_filtered.append(new_secquence)
+            secquences_filtered = [item for sublist in secquences_filtered for item in sublist]
 
-        secquences_filtered = [item for sublist in secquences_filtered for item in sublist]
+            # print(secquences_filtered)
+            filenames_in_sec_valid = []
+            if len(secquences_filtered) > 0:
+                filenames_in_sec = (secquences_filtered)
+                for k in range(len(filenames_in_sec)):
+                    valid = True
 
-        # print(secquences_filtered)
-        filenames_in_sec_valid = []
-        if len(secquences_filtered) > 0:
-            filenames_in_sec = (secquences_filtered)
-            for k in range(len(filenames_in_sec)):
-                valid = True
+                    line = (filenames_in_sec[k]).split('/') # scene1_traj1_2/polarization/pol2/00/*.png
+                    folder = '/' + os.path.join(*line[1:-3]) #scene1_traj1_2/polarization
+                    frame_index = int(line[-1].split('.')[0]) #000000
+                    for id in frame_idxs:
+                        if id != "s":
+                            f_str = "{:06d}{}".format(frame_index + id * offset, self.img_ext) #000010.png
 
-                line = (filenames_in_sec[k]).split('/') # scene1_traj1_2/polarization/pol2/00/*.png
-                folder = '/' + os.path.join(*line[1:-3]) #scene1_traj1_2/polarization
-                frame_index = int(line[-1].split('.')[0]) #000000
-                for id in frame_idxs:
-                    if id != "s":
-                        f_str = "{:06d}{}".format(frame_index + id * offset, self.img_ext) #000010.png
+                            file = os.path.join(folder, input_lookup, filter, f_str) #filenames_in_sec[k + id] scene1_traj1_2/polarization/pol2/00/000010.png
+                            if not os.path.isfile(file):
+                                valid = False
 
-                        file = os.path.join(folder, input_lookup, filter, f_str) #filenames_in_sec[k + id] scene1_traj1_2/polarization/pol2/00/000010.png
-                        if not os.path.isfile(file):
-                            valid = False
+                            f_str_pose = "{:06d}{}".format(frame_index + id * offset, ".txt")
+                            file_pose = os.path.join(folder, "_pose", f_str_pose) #scene1_traj1_2/polarization/_pose/000010.txt
+                            if not os.path.isfile(file_pose):
+                                valid = False
 
-                        f_str_pose = "{:06d}{}".format(frame_index + id * offset, ".txt")
-                        file_pose = os.path.join(folder, "_pose", f_str_pose) #scene1_traj1_2/polarization/_pose/000010.txt
-                        if not os.path.isfile(file_pose):
-                            valid = False
+                            f_str_gt = "{:06d}{}".format(frame_index + id * offset, ".png")
+                            file_gt = os.path.join(folder, "_gt", f_str_gt)
+                            if not os.path.isfile(file_gt):
+                                valid = False
 
-                        f_str_gt = "{:06d}{}".format(frame_index + id * offset, ".png")
-                        file_gt = os.path.join(folder, "_gt", f_str_gt)
-                        if not os.path.isfile(file_gt):
-                            valid = False
+                            f_str_gt = "{:06d}{}".format(frame_index + id * offset, ".png")
+                            file_gt = os.path.join(folder, depth_modality, f_str_gt)
+                            if not os.path.isfile(file_gt):
+                                valid = False
 
-                        f_str_gt = "{:06d}{}".format(frame_index + id * offset, ".png")
-                        file_gt = os.path.join(folder, depth_modality, f_str_gt)
-                        if not os.path.isfile(file_gt):
-                            valid = False
+                    if valid:
+                        filenames_in_sec_valid.append(filenames_in_sec[k])
 
-                if valid:
-                    filenames_in_sec_valid.append(filenames_in_sec[k])
-
-            filenames.append(filenames_in_sec_valid)
-        filenames_out = [item for sublist in filenames for item in sublist]
-        for file in filenames_out:
-            if not os.path.isfile(file):
-                print("ERROR FOR FILE:", file)
+                filenames.append(filenames_in_sec_valid)
+            filenames_out = [item for sublist in filenames for item in sublist]
+            for file in filenames_out:
+                if not os.path.isfile(file):
+                    print("ERROR FOR FILE:", file)
         # print(filenames_out)
         return filenames_out
 
-    def preprocess(self, inputs, do_color_aug, color_aug):
+    # def preprocess(self, inputs, do_color_aug, color_aug)
+    def preprocess(self, inputs):
         """Resize colour images to the required scales and augment if required
 
         We create the color_aug object in advance and apply the same augmentation to all
         images in this item. This ensures that all images input to the pose network receive the
         same augmentation.
         """
-        for k in list(inputs):
-            if "color" in k:
-                n, im, i = k
-                for i in range(self.num_scales):
-                    inputs[(n, im, i)] = self.resize[i](inputs[(n, im, i - 1)])
+        # for k in list(inputs):
+        #     if "color" in k:
+        #         n, im, i = k
+        #
+        #         for i in range(self.num_scales):
+        #             inputs[(n, im, i)] = self.resize[i]((inputs[(n, im, i - 1)]))
 
         for k in list(inputs):
             f = inputs[k]
             if "color" in k:
                 n, im, i = k
                 inputs[(n, im, i)] = self.to_tensor(f)
-                # check it isn't a blank frame - keep _aug as zeros so we can check for it
-                if inputs[(n, im, i)].sum() == 0:
-                    inputs[(n + "_aug", im, i)] = inputs[(n, im, i)]
-                else:
-                    if do_color_aug:
-
-                        aug = color_aug(f)
-                    else:
-                        aug = f
-                    inputs[(n + "_aug", im, i)] = self.to_tensor(aug)
+                # # check it isn't a blank frame - keep _aug as zeros so we can check for it
+                # if inputs[(n, im, i)].sum() == 0:
+                #     inputs[(n + "_aug", im, i)] = inputs[(n, im, i)]
+                # else:
+                #     if do_color_aug:
+                #
+                #         aug = color_aug(f)
+                #     else:
+                #         aug = f
+                #     inputs[(n + "_aug", im, i)] = self.to_tensor(aug)
 
     def __len__(self):
         return len(self.filenames)
 
     def load_intrinsics(self, folder):
+        print(self.full_res_shape)
         K = np.array([[0.58, 0, 0.5, 0],
                            [0, 0.60, 0.5, 0],
                            [0, 0, 1, 0],
@@ -225,13 +230,11 @@ class IndoorDataset(data.Dataset):
         # k = readlines(os.path.join(folder, "intrinsics.txt")).split()
         with open(os.path.join(folder, "intrinsics.txt"), 'r') as f:
             k = f.read().split()#.splitlines()
+
         k = np.array(k).reshape(3,3)
         K[:3,:3] = k
-
         K[0, :] /= self.full_res_shape[0]
         K[1, :] /= self.full_res_shape[1]
-
-
 
         return K.copy()
 
@@ -263,6 +266,7 @@ class IndoorDataset(data.Dataset):
             do_flip = False #self.is_train and random.random() > 0.5
 
             folder, frame_index = self.index_to_folder_and_frame_idx(index)
+
             side = "l"
 
             poses = {}
@@ -271,13 +275,35 @@ class IndoorDataset(data.Dataset):
 
                     if i == "s":
                         other_side = {"r": "l", "l": "r"}[side]
-                        inputs[("color", i, -1)] = self.get_color(
-                            folder, frame_index, other_side, do_flip, self.input_lookup, self.filter) #folder should be without "pol2/00/..."
+
+                        im00 = self.get_color(
+                            folder, frame_index + i * self.frame_offset, None, do_flip, self.input_lookup, "00")
+                        im10 = self.get_color(
+                            folder, frame_index + i * self.frame_offset, None, do_flip, self.input_lookup, "10")
+                        im00 = np.asarray(im00)
+                        im10 = np.asarray(im10)
+                        image = np.concatenate((im00, im10), axis=2)
+                        inputs[("color", i, 0)] = image
+                        inputs[("color_aug", i, 0)] = image # tmp (needed because other parts of the code use color_aug)
+
+                        # inputs[("color", i, -1)] = self.get_color(
+                        #     folder, frame_index, other_side, do_flip, self.input_lookup,
+                        #     "11")  # folder should be without "pol2/00/..."
 
                     else:
                         try:
-                            inputs[("color", i, -1)] = self.get_color(
-                                folder, frame_index + i * self.frame_offset, None, do_flip, self.input_lookup, self.filter)
+                            im00 = self.get_color(
+                                folder, frame_index + i * self.frame_offset, None, do_flip, self.input_lookup, "00")
+                            im10 = self.get_color(
+                                folder, frame_index + i * self.frame_offset, None, do_flip, self.input_lookup, "10")
+                            im00 = np.asarray(im00)
+                            im10 = np.asarray(im10)
+                            image = np.concatenate((im00, im10), axis=2)
+                            inputs[("color", i, 0)] = image
+                            inputs[("color_aug", i, 0)] = image  # tmp (needed because other parts of the code use color_aug)
+
+                            # inputs[("color", i, -1)] = self.get_color(
+                            #     folder, frame_index + i * self.frame_offset, None, do_flip, self.input_lookup, "11")
 
                             if i != 0:
                                 if not self.supervised_depth_only:
@@ -290,8 +316,10 @@ class IndoorDataset(data.Dataset):
                         except FileNotFoundError as e:
                             if i != 0:
                                 # fill with dummy values
-                                inputs[("color", i, -1)] = \
+                                inputs[("color", i, 0)] = \
                                     Image.fromarray(np.zeros((100, 100, 3)).astype(np.uint8))
+                                inputs[("color_aug", i, 0)] = \
+                                    Image.fromarray(np.zeros((100, 100, 3)).astype(np.uint8)) # tmp (needed because other parts of the code use color_aug)
                                 poses[i] = None
                             else:
                                 raise FileNotFoundError(f'Cannot find frame - make sure your '
@@ -303,12 +331,11 @@ class IndoorDataset(data.Dataset):
                                                                [0, 0, 1, 0],
                                                                [0, 0, 0, 1]], dtype=np.float32))
 
-            self.full_res_shape = inputs[("color", 0, -1)].size
+            self.full_res_shape = inputs[("color", 0, 0)].shape
 
             # adjusting intrinsics to match each scale in the pyramid
             for scale in range(self.num_scales):
                 K = self.load_intrinsics(folder)
-
                 K[0, :] *= self.width // (2 ** scale)
                 K[1, :] *= self.height // (2 ** scale)
 
@@ -335,16 +362,16 @@ class IndoorDataset(data.Dataset):
             # if self.load_mask:
             #     inputs["mask"] = self.get_mask(folder, frame_index, side, do_flip)
 
-
             transforms.ColorJitter.get_params(
                 self.brightness, self.contrast, self.saturation, self.hue)
             color_aug = transforms.ColorJitter(
                 self.brightness, self.contrast, self.saturation, self.hue)
 
-            self.preprocess(inputs, do_color_aug, color_aug)
-            for i in self.frame_idxs:
-                del inputs[("color", i, -1)]
-                del inputs[("color_aug", i, -1)]
+            # def preprocess(self, inputs, do_color_aug, color_aug)
+            self.preprocess(inputs)
+            # for i in self.frame_idxs:
+            #     del inputs[("color", i, -1)]
+            #     del inputs[("color_aug", i, -1)]
 
             return inputs
         except:

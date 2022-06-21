@@ -9,6 +9,7 @@ os.environ["MKL_NUM_THREADS"] = "1"  # noqa F402
 os.environ["NUMEXPR_NUM_THREADS"] = "1"  # noqa F402
 os.environ["OMP_NUM_THREADS"] = "1"  # noqa F402
 import skimage.transform
+from torchvision import transforms
 import numpy as np
 import PIL.Image as pil
 from PIL import ImageFile
@@ -57,11 +58,12 @@ class HAMMER_Dataset(IndoorDataset):
 
     def get_color(self, folder, frame_index, side, do_flip, input_lookup="pol2", filter="00"):
         path = self.get_image_path(folder, frame_index, side, input_lookup, filter)
-        color = self.loader(path)
 
+        color = self.loader(path)
         if do_flip:
             color = color.transpose(pil.FLIP_LEFT_RIGHT)
-
+        resize = transforms.Resize((self.height, self.width), interpolation=self.interp)
+        color = resize(color)
         return color
 
     def get_image_path(self, folder, frame_index, side=None, input_lookup="pol2", filter="00"):
