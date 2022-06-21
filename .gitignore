@@ -1,1 +1,15 @@
-3dcvenv
+#env
+3dcenv
+
+data/
+splits/
+runs/
+
+#ide
+.idea/
+
+#scripts
+*.sh
+
+#cache
+**/__pycache__/
