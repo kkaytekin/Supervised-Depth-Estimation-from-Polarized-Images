@@ -51,13 +51,12 @@ class HAMMER_Dataset(IndoorDataset):
         """Convert index in the dataset to a folder name, frame_idx and any other bits
         """
         line = self.filenames[index].split('/')
-        # print(line)
-        folder = '/'+os.path.join(*line[1:-2])
+        folder = '/'+os.path.join(*line[1:-3])
         frame_index = int(line[-1].split('.')[0])
         return folder, frame_index
 
-    def get_color(self, folder, frame_index, side, do_flip, input_lookup="rgb"):
-        path = self.get_image_path(folder, frame_index, side, input_lookup)
+    def get_color(self, folder, frame_index, side, do_flip, input_lookup="pol2", filter="00"):
+        path = self.get_image_path(folder, frame_index, side, input_lookup, filter)
         color = self.loader(path)
 
         if do_flip:
@@ -65,12 +64,12 @@ class HAMMER_Dataset(IndoorDataset):
 
         return color
 
-    def get_image_path(self, folder, frame_index, side=None, input_lookup="rgb"):
+    def get_image_path(self, folder, frame_index, side=None, input_lookup="pol2", filter="00"):
         f_str = "{:06d}{}".format(frame_index, self.img_ext)
         if side is None:
 
             image_path = os.path.join(
-                folder, input_lookup, f_str)
+                folder, input_lookup, filter, f_str)
         else:
 
             image_path = os.path.join(

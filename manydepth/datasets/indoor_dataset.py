@@ -61,15 +61,15 @@ class IndoorDataset(data.Dataset):
         self.depth_modality = depth_modality
 
 
-        # self.input_lookup = "pol"
-        self.input_lookup = input_lookup
+        self.input_lookup = "pol2"
         if modality == "d435":
             self.input_lookup = "no_proj_left"
 
+        self.filter = "00"
         self.data_path = data_path
         self.secquences = secquences
         self.modality = modality
-        self.filenames = self.get_filenames(self.secquences, frame_idxs, offset, modality, depth_modality)
+        self.filenames = self.get_filenames(self.secquences, frame_idxs, offset, modality, depth_modality, self.input_lookup, self.filter)
         self.height = height
         self.width = width
         self.num_scales = num_scales
@@ -114,30 +114,26 @@ class IndoorDataset(data.Dataset):
 
         self.load_depth = True#self.check_depth()
 
-    def get_filenames(self, secquences, frame_idxs, offset, modality, depth_modality):
+    def get_filenames(self, secquences, frame_idxs, offset, modality, depth_modality, input_lookup, filter):
         filenames = []
 
-        input_lookup = "pol"
-        if modality == "d435":
-            input_lookup = "no_proj_left"
         secquences_filtered = []
         for i in range(len(secquences)):
-            folder = os.path.join(self.data_path, secquences[i], modality, input_lookup)
+            folder = os.path.join(self.data_path, secquences[i], modality, input_lookup, filter)
             filenames_in_sec = sorted(glob.glob(folder + '/*.png'))
             new_secquence = []
             old_frame_index = 1
-            for k in range(len(filenames_in_sec)):
+            for k in range(len(filenames_in_sec)): #scene1_traj1_2/polarization/pol2/00/*.png
                 line = filenames_in_sec[k].split('/')
-                frame_index = int(line[-1].split('.')[0])
-                f_str = "{:06d}{}".format(frame_index, self.img_ext)
-                file = os.path.join(folder, f_str)
+                frame_index = int(line[-1].split('.')[0]) #just number of the image 000000
+                f_str = "{:06d}{}".format(frame_index, self.img_ext) #000000.png
+                file = os.path.join(folder, f_str) #scene1_traj1_2/polarization/pol2/00/000000.png
                 old_frame_index += 1
                 if os.path.isfile(file) and frame_index == old_frame_index:
                     new_secquence.append(filenames_in_sec[k])
                 else:
                     secquences_filtered.append(new_secquence)
                     new_secquence = []
-
 
                 old_frame_index = frame_index
 
@@ -152,19 +148,19 @@ class IndoorDataset(data.Dataset):
             for k in range(len(filenames_in_sec)):
                 valid = True
 
-                line = (filenames_in_sec[k]).split('/')
-                folder = '/' + os.path.join(*line[1:-2])
-                frame_index = int(line[-1].split('.')[0])
+                line = (filenames_in_sec[k]).split('/') # scene1_traj1_2/polarization/pol2/00/*.png
+                folder = '/' + os.path.join(*line[1:-3]) #scene1_traj1_2/polarization
+                frame_index = int(line[-1].split('.')[0]) #000000
                 for id in frame_idxs:
                     if id != "s":
-                        f_str = "{:06d}{}".format(frame_index + id * offset, self.img_ext)
+                        f_str = "{:06d}{}".format(frame_index + id * offset, self.img_ext) #000010.png
 
-                        file = os.path.join(folder, input_lookup, f_str)#filenames_in_sec[k + id]
+                        file = os.path.join(folder, input_lookup, filter, f_str) #filenames_in_sec[k + id] scene1_traj1_2/polarization/pol2/00/000010.png
                         if not os.path.isfile(file):
                             valid = False
 
                         f_str_pose = "{:06d}{}".format(frame_index + id * offset, ".txt")
-                        file_pose = os.path.join(folder, "_pose", f_str_pose)
+                        file_pose = os.path.join(folder, "_pose", f_str_pose) #scene1_traj1_2/polarization/_pose/000010.txt
                         if not os.path.isfile(file_pose):
                             valid = False
 
@@ -263,28 +259,25 @@ class IndoorDataset(data.Dataset):
         try:
         # if 0 == 0:
             inputs = {}
-
             do_color_aug = self.is_train and random.random() > 0.5
-            do_flip = False#self.is_train and random.random() > 0.5
+            do_flip = False #self.is_train and random.random() > 0.5
 
             folder, frame_index = self.index_to_folder_and_frame_idx(index)
             side = "l"
 
             poses = {}
-            if type(self).__name__ in ["CityscapesPreprocessedDataset", "CityscapesEvalDataset"]:
-                inputs.update(self.get_colors(folder, frame_index, side, do_flip))
-            else:
+            if type(self).__name__ in ["Indoordataset", "HAMMER_Dataset"]:
                 for i in self.frame_idxs:
+
                     if i == "s":
                         other_side = {"r": "l", "l": "r"}[side]
                         inputs[("color", i, -1)] = self.get_color(
-                            folder, frame_index, other_side, do_flip, self.input_lookup)
-
+                            folder, frame_index, other_side, do_flip, self.input_lookup, self.filter) #folder should be without "pol2/00/..."
 
                     else:
                         try:
                             inputs[("color", i, -1)] = self.get_color(
-                                folder, frame_index + i * self.frame_offset, None, do_flip, self.input_lookup)
+                                folder, frame_index + i * self.frame_offset, None, do_flip, self.input_lookup, self.filter)
 
                             if i != 0:
                                 if not self.supervised_depth_only:
