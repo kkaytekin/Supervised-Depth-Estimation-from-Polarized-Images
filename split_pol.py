@@ -20,19 +20,19 @@ def split_pol(img):
     return im00, im10, im01, im11
 
 
-def stack_pol(im0, im45, im90, im135):
+def stack_pol(im00, im10, im01, im11):
     """
     Stack 4 polarized grayscale images
     """
     # img_cat = np.concatenate((im0, im45, im90, im135), axis=2) # for rgb
-    im_stack = np.stack((im0, im45, im90, im135), axis=-1)
+    im_stack = np.stack((im00, im10, im01, im11), axis=-1)
 
     return im_stack
 
 
 def main():
 
-    path = "" #path to the polarization folder
+    path = "/home/witek/Documents/AT3DCV/Datasets/HAMMER_mini/train/scene2_traj1_2/polarization" #path to the polarization folder
     folder_read = os.path.join(path, "pol/")
     folder_write_00 = os.path.join(path, "pol00/")
     folder_write_10 = os.path.join(path, "pol10/")
