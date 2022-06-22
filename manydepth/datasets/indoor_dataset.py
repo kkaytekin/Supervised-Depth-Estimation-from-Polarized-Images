@@ -312,6 +312,11 @@ class IndoorDataset(data.Dataset):
                             im01 = np.asarray(im01)
                             im11 = np.asarray(im11)
                             images = np.concatenate((im00, im10, im01, im11), axis=2)
+
+                            # images = np.reshape(images, (480, 320, 12))
+                            # print("Shape img: ", images.shape)
+
+
                             inputs[("color", i, 0)] = images
                             inputs[("color_aug", i, 0)] = images  # tmp (needed because other parts of the code use color_aug)
 

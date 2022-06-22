@@ -32,22 +32,22 @@ def stack_pol(im00, im10, im01, im11):
 
 def main():
 
-    sequence = "scene2_traj2_naked_2"
+    sequence = "scene2_traj2_2"
     path = r"/media/jungo/Research/Datasets/HAMMER/train/{0}/polarization/".format(sequence) #path to the polarization folder
     folder_read = os.path.join(path, "pol/")
-    folder_write_00 = os.path.join(path, "pol2/pol00/")
+    folder_write_00 = os.path.join(path, "pol2/00/")
     if not os.path.exists(folder_write_00):
         os.makedirs(folder_write_00)
 
-    folder_write_10 = os.path.join(path, "pol2/pol10/")
+    folder_write_10 = os.path.join(path, "pol2/10/")
     if not os.path.exists(folder_write_10):
         os.makedirs(folder_write_10)
 
-    folder_write_01 = os.path.join(path, "pol2/pol01/")
+    folder_write_01 = os.path.join(path, "pol2/01/")
     if not os.path.exists(folder_write_01):
         os.makedirs(folder_write_01)
 
-    folder_write_11 = os.path.join(path, "pol2/pol11/")
+    folder_write_11 = os.path.join(path, "pol2/11/")
     if not os.path.exists(folder_write_11):
         os.makedirs(folder_write_11)
 

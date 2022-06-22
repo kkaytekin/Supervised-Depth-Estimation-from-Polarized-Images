@@ -248,7 +248,7 @@ class Trainer:
         # for key, value in train_dataset[0].items():
         #     print(key)
 
-        print("DIMENSION: ", train_dataset[0][('color_aug', 0, 0)].shape)
+        # print("DIMENSION: ", train_dataset[0][('color_aug', 0, 0)].shape)
 
         # print("TRAIN DATASET LENGTH: ", len(train_dataset))
         self.train_loader = DataLoader(
@@ -460,7 +460,10 @@ class Trainer:
                 depth_dpt = self.models["dpt"](inputs["color_aug", 0, 0])
                 mono_outputs[("depth", 0, 0)] = depth_dpt.unsqueeze(1)
             else:
-                feats = self.models["mono_encoder"](inputs["color_aug", 0, 0])
+                # print("Shape color_aug: ", inputs["color_aug", 0, 0].shape)
+                input_reshaped = inputs["color_aug", 0, 0].view(12, 12, 320, 480)
+                feats = self.models["mono_encoder"](input_reshaped)
+                #print("Shape color_aug: ", inputs["color_aug", 0, 0].shape)
                 mono_outputs.update(self.models['mono_depth'](feats))
 
 
@@ -749,6 +752,7 @@ class Trainer:
                     # print(depth_dpt.mean())
                     mono_outputs[("depth", 0, 0)] = depth_dpt.unsqueeze(1)
                 else:
+                    # print("Shape img: ", inputs["color", 0, 0].shape)
                     feats = self.models["mono_encoder"](inputs["color", 0, 0])
                     mono_outputs.update(self.models['mono_depth'](feats))
 
@@ -843,9 +847,9 @@ class Trainer:
 
             del losses
             losses = {}
-            print("MONO Depth Test:")
+            #print("MONO Depth Test:")
 
-            print("preds_mono HERE: ", preds_mono)
+            #print("preds_mono HERE: ", preds_mono)
 
             self.compute_depth_losses_from_list(gts, preds_mono, losses)
             self.log("test_mono", inputs, outputs, losses, log_images=False)
