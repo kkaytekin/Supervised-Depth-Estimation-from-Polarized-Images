@@ -85,7 +85,7 @@ class Trainer:
 
         timestamp = datetime.now()
         self.log_path = os.path.join(self.opt.log_dir,
-                                     self.opt.model_name+'_'+timestamp.strftime("%m-%d_%H:%M:%S"))
+                                     self.opt.model_name+'_'+timestamp.strftime("%m-%d_%H-%M-%S"))
         self.log_args(timestamp)
 
         print('Start training ...')
@@ -327,6 +327,7 @@ class Trainer:
 
     def log_args(self,timestamp):
         # Dump the passed arguments into a log file
+        #print("log path", self.log_path)
         os.makedirs(self.log_path, exist_ok=True)
         logging.basicConfig(filename=os.path.join(self.log_path,'args.log'),
                             level=logging.INFO,
