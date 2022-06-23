@@ -102,9 +102,9 @@ def main():
 
     # img_example = torch.from_numpy(img_example)
     # print(img_example.shape) # [1664, 2176]
-    im0, im45, im90, im135 = split_pol(img_example)
+    im00, im10, im01, im11 = split_pol(img_example) # order: 90, 135, 45, 0
     # print(im0.shape) # [832, 1088]
-    im_stack = stack_pol(im0, im45, im90, im135)
+    im_stack = stack_pol(im11, im01, im10, im00)
     # print(im_stack.shape) # [832, 1088, 4]
     # plt.imshow(im0)
     # plt.show()
