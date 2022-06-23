@@ -255,7 +255,6 @@ class Trainer:
         img_ext = '.png' #if self.opt.png else '.jpg'
 
 
-
         train_dataset = self.dataset(
             self.data_path, train_filenames, self.opt.height, self.opt.width,
             frames_to_load, 4, is_train=True, img_ext=img_ext, offset=self.opt.offset, modality=self.opt.modality,

@@ -125,16 +125,19 @@ class HAMMER_Dataset(IndoorDataset):
 
     def get_depth_processed(self, folder, frame_index, side, do_flip, depth_modality):
         f_str = "{:06d}.png".format(frame_index)
+        #print("gdp1")
         depth_path = os.path.join(
             folder,
             depth_modality,
             f_str)
+        #print("gdp2")
+        #print(depth_path)
 
-
-        depth_gt = cv2.resize(cv2.imread(depth_path, cv2.IMREAD_UNCHANGED), [self.width, self.height], cv2.INTER_NEAREST)#pil.open(depth_path)
-        # depth_gt = depth_gt.resize([self.width, self.height], pil.NEAREST)
+        depth_gt = cv2.resize(cv2.imread(depth_path, cv2.IMREAD_UNCHANGED), (self.width, self.height), cv2.INTER_NEAREST)#pil.open(depth_path)
+        #depth_gt = depth_gt.resize([self.width, self.height], pil.NEAREST)
+        #print("gdp3")
         depth_gt = (np.array(depth_gt).astype(np.uint16) / 1000).astype(np.float32)
-
+        #print("gdp4")
         if do_flip:
             depth_gt = np.fliplr(depth_gt)
         return depth_gt
@@ -146,7 +149,7 @@ class HAMMER_Dataset(IndoorDataset):
             "_gt",
             f_str)
 
-        depth_gt = cv2.resize(cv2.imread(depth_path, cv2.IMREAD_UNCHANGED), [self.width, self.height],
+        depth_gt = cv2.resize(cv2.imread(depth_path, cv2.IMREAD_UNCHANGED), (self.width, self.height),
                               cv2.INTER_NEAREST)  # pil.open(depth_path)
         # depth_gt = depth_gt.resize([self.width, self.height], pil.NEAREST)
         depth_gt = (np.array(depth_gt).astype(np.uint16) / 1000).astype(np.float32)

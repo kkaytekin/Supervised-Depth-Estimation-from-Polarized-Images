@@ -47,8 +47,8 @@ class IndoorDataset(data.Dataset):
                  modality="polarization",
                  is_train=False,
                  img_ext='.png',
-                 supervised_depth=False,
-                 supervised_depth_only=False,
+                 supervised_depth=True,
+                 supervised_depth_only=True,
                  depth_modality="_gt",
                  ):
         super(IndoorDataset, self).__init__()
@@ -302,14 +302,14 @@ class IndoorDataset(data.Dataset):
                                 raise FileNotFoundError(f'Cannot find frame - make sure your '
                                                         f'--data_path is set correctly, or try adding'
                                                         f' the --png flag. {e}')
-
+            #print("111111111111")
             inputs[("stereo_T")] = torch.from_numpy(np.array([[ 1, 0, 0, -0.0498921],
                                                                [0, 1, 0, 0],
                                                                [0, 0, 1, 0],
                                                                [0, 0, 0, 1]], dtype=np.float32))
 
             self.full_res_shape = inputs[("color", 0, -1)].size
-
+            #print("22222222222222222222")
             # adjusting intrinsics to match each scale in the pyramid
             for scale in range(self.num_scales):
                 K = self.load_intrinsics(folder)
@@ -323,19 +323,24 @@ class IndoorDataset(data.Dataset):
 
                 inputs[("K", scale)] = torch.from_numpy(K)
                 inputs[("inv_K", scale)] = torch.from_numpy(inv_K)
-
+            #print("3333333333333333333333333333333")
             if self.load_depth:# and False:
+                #print("3.1")
                 if self.supervised_depth:
+                #    print("3.1.0")
                     depth = self.get_depth_processed(folder, frame_index, side, do_flip, self.depth_modality)
+                #    print("3.1.1")
                     inputs["depth"] = np.expand_dims(depth, 0)
+                #    print("3.1.2")
                     inputs["depth"] = torch.from_numpy(inputs["depth"].astype(np.float32))#.clamp(0.01, 2.0)
-
+                #print("3.2")
                 # print(index, folder, frame_index)
 
                 depth_gt = self.get_depth_gt(folder, frame_index, side, do_flip)
+                #print("3.3")
                 inputs["depth_gt"] = np.expand_dims(depth_gt, 0)
                 inputs["depth_gt"] = torch.from_numpy(inputs["depth_gt"].astype(np.float32))#.clamp(0.01, 2.0)
-
+            #print("4444444444444444444444444")
 
             # if self.load_mask:
             #     inputs["mask"] = self.get_mask(folder, frame_index, side, do_flip)
@@ -345,12 +350,12 @@ class IndoorDataset(data.Dataset):
                 self.brightness, self.contrast, self.saturation, self.hue)
             color_aug = transforms.ColorJitter(
                 self.brightness, self.contrast, self.saturation, self.hue)
-
+            #print("55555555555555555555555")
             self.preprocess(inputs, do_color_aug, color_aug)
             for i in self.frame_idxs:
                 del inputs[("color", i, -1)]
                 del inputs[("color_aug", i, -1)]
-
+            #print("6666666666666666666666666666666666666")
             return inputs
         except:
             print("ERROR DURING LOADING!!!")
