@@ -65,12 +65,11 @@ class IndoorDataset(data.Dataset):
         if modality == "d435":
             self.input_lookup = "no_proj_left"
 
-        self.filter = "00"
         self.data_path = data_path
         self.secquences = secquences
         self.modality = modality
         self.filenames = self.get_filenames(self.secquences, frame_idxs, offset, modality, depth_modality,
-                                            self.input_lookup, self.filter)
+                                            self.input_lookup)
         self.height = height
         self.width = width
         self.num_scales = num_scales
@@ -115,7 +114,7 @@ class IndoorDataset(data.Dataset):
 
         self.load_depth = True#self.check_depth()
 
-    def get_filenames(self, secquences, frame_idxs, offset, modality, depth_modality, input_lookup, filter):
+    def get_filenames(self, secquences, frame_idxs, offset, modality, depth_modality, input_lookup):
         filenames = []
         filters = ["00", "10", "01", "11"]
         for filter in filters:

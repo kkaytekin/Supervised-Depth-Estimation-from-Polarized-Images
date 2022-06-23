@@ -321,7 +321,8 @@ class Trainer:
 
         print("Using split:\n  ", self.opt.split)
         print("There are {:d} training items and {:d} validation items and {:d} test items\n".format(
-            len(train_dataset), len(val_dataset), len(test_dataset)))
+            int(len(train_dataset)/4), int(len(val_dataset)/4), int(len(test_dataset)/4))) # without dividing by 4 it counts 4 filters
+                                                                                           # of the same image as 4 dataset samples
 
         self.save_opts()
 
