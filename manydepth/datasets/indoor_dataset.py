@@ -36,7 +36,7 @@ class IndoorDataset(data.Dataset):
     """
     def __init__(self,
                  data_path,
-                 secquences,
+                 sequences,
                  height,
                  width,
                  frame_idxs,
@@ -66,9 +66,9 @@ class IndoorDataset(data.Dataset):
             self.input_lookup = "no_proj_left"
 
         self.data_path = data_path
-        self.secquences = secquences
+        self.sequences = sequences
         self.modality = modality
-        self.filenames = self.get_filenames(self.secquences, frame_idxs, offset, modality, depth_modality,
+        self.filenames = self.get_filenames(self.sequences, frame_idxs, offset, modality, depth_modality,
                                             self.input_lookup)
         self.height = height
         self.width = width
@@ -114,15 +114,15 @@ class IndoorDataset(data.Dataset):
 
         self.load_depth = True#self.check_depth()
 
-    def get_filenames(self, secquences, frame_idxs, offset, modality, depth_modality, input_lookup):
+    def get_filenames(self, sequences, frame_idxs, offset, modality, depth_modality, input_lookup):
         filenames = []
         filters = ["00", "10", "01", "11"]
         for filter in filters:
-            secquences_filtered = []
-            for i in range(len(secquences)):
-                folder = os.path.join(self.data_path, secquences[i], modality, input_lookup, filter)
+            sequences_filtered = []
+            for i in range(len(sequences)):
+                folder = os.path.join(self.data_path, sequences[i], modality, input_lookup, filter)
                 filenames_in_sec = sorted(glob.glob(folder + '/*.png'))
-                new_secquence = []
+                new_sequence = []
                 old_frame_index = 1
                 for k in range(len(filenames_in_sec)): #scene1_traj1_2/polarization/pol2/00/*.png
                     line = filenames_in_sec[k].split('/')
@@ -131,21 +131,21 @@ class IndoorDataset(data.Dataset):
                     file = os.path.join(folder, f_str) #scene1_traj1_2/polarization/pol2/00/000000.png
                     old_frame_index += 1
                     if os.path.isfile(file) and frame_index == old_frame_index:
-                        new_secquence.append(filenames_in_sec[k])
+                        new_sequence.append(filenames_in_sec[k])
                     else:
-                        secquences_filtered.append(new_secquence)
-                        new_secquence = []
+                        sequences_filtered.append(new_sequence)
+                        new_sequence = []
 
                     old_frame_index = frame_index
 
-                secquences_filtered.append(new_secquence)
+                sequences_filtered.append(new_sequence)
 
-            secquences_filtered = [item for sublist in secquences_filtered for item in sublist]
+            sequences_filtered = [item for sublist in sequences_filtered for item in sublist]
 
-            # print(secquences_filtered)
+            # print(sequences_filtered)
             filenames_in_sec_valid = []
-            if len(secquences_filtered) > 0:
-                filenames_in_sec = (secquences_filtered)
+            if len(sequences_filtered) > 0:
+                filenames_in_sec = (sequences_filtered)
                 for k in range(len(filenames_in_sec)):
                     valid = True
 
