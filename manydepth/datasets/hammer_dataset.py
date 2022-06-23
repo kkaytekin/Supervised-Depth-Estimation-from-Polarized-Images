@@ -9,6 +9,7 @@ os.environ["MKL_NUM_THREADS"] = "1"  # noqa F402
 os.environ["NUMEXPR_NUM_THREADS"] = "1"  # noqa F402
 os.environ["OMP_NUM_THREADS"] = "1"  # noqa F402
 import skimage.transform
+from torchvision import transforms
 import numpy as np
 import PIL.Image as pil
 from PIL import ImageFile
@@ -51,26 +52,26 @@ class HAMMER_Dataset(IndoorDataset):
         """Convert index in the dataset to a folder name, frame_idx and any other bits
         """
         line = self.filenames[index].split('/')
-        # print(line)
-        folder = '/'+os.path.join(*line[1:-2])
+        folder = '/'+os.path.join(*line[1:-3])
         frame_index = int(line[-1].split('.')[0])
         return folder, frame_index
 
-    def get_color(self, folder, frame_index, side, do_flip, input_lookup="rgb"):
-        path = self.get_image_path(folder, frame_index, side, input_lookup)
-        color = self.loader(path)
+    def get_color(self, folder, frame_index, side, do_flip, input_lookup="pol2", filter="00"):
+        path = self.get_image_path(folder, frame_index, side, input_lookup, filter)
 
+        color = self.loader(path)
         if do_flip:
             color = color.transpose(pil.FLIP_LEFT_RIGHT)
-
+        resize = transforms.Resize((self.height, self.width), interpolation=self.interp)
+        color = resize(color)
         return color
 
-    def get_image_path(self, folder, frame_index, side=None, input_lookup="rgb"):
+    def get_image_path(self, folder, frame_index, side=None, input_lookup="pol2", filter="00"):
         f_str = "{:06d}{}".format(frame_index, self.img_ext)
         if side is None:
 
             image_path = os.path.join(
-                folder, input_lookup, f_str)
+                folder, input_lookup, filter, f_str)
         else:
 
             image_path = os.path.join(
@@ -130,11 +131,11 @@ class HAMMER_Dataset(IndoorDataset):
             depth_modality,
             f_str)
 
+        depth_gt = cv2.resize(cv2.imread(depth_path, cv2.IMREAD_UNCHANGED), (self.width, self.height),
+                              cv2.INTER_NEAREST)  # pil.open(depth_path)
 
-        depth_gt = cv2.resize(cv2.imread(depth_path, cv2.IMREAD_UNCHANGED), [self.width, self.height], cv2.INTER_NEAREST)#pil.open(depth_path)
         # depth_gt = depth_gt.resize([self.width, self.height], pil.NEAREST)
         depth_gt = (np.array(depth_gt).astype(np.uint16) / 1000).astype(np.float32)
-
         if do_flip:
             depth_gt = np.fliplr(depth_gt)
         return depth_gt
@@ -146,7 +147,7 @@ class HAMMER_Dataset(IndoorDataset):
             "_gt",
             f_str)
 
-        depth_gt = cv2.resize(cv2.imread(depth_path, cv2.IMREAD_UNCHANGED), [self.width, self.height],
+        depth_gt = cv2.resize(cv2.imread(depth_path, cv2.IMREAD_UNCHANGED), (self.width, self.height),
                               cv2.INTER_NEAREST)  # pil.open(depth_path)
         # depth_gt = depth_gt.resize([self.width, self.height], pil.NEAREST)
         depth_gt = (np.array(depth_gt).astype(np.uint16) / 1000).astype(np.float32)
