@@ -888,7 +888,7 @@ class Trainer:
             losses = {}
             print("MONO Depth Test:")
             self.compute_depth_losses_from_list(gts, preds_mono, losses)
-            self.log("test_mono", inputs, outputs, losses, log_images=False)
+            self.log("test_mono", inputs, outputs, losses, log_images=False, log_essential_images=True, mono_depth=True)
 
     def generate_images_pred(self, inputs, outputs, is_multi=False):
         """Generate the warped (reprojected) color images for a minibatch.
@@ -1342,7 +1342,7 @@ class Trainer:
         print(print_string.format(self.epoch, batch_idx, samples_per_sec, loss,
                                   sec_to_hm_str(time_sofar), sec_to_hm_str(training_time_left), time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(time.time()))))
 
-    def log(self, mode, inputs, outputs, losses, log_images=True, log_essential_images=False):
+    def log(self, mode, inputs, outputs, losses, log_images=True, log_essential_images=False, mono_depth=False):
         """Write an event to the tensorboard events file
         """
         writer = self.writers[mode]
@@ -1356,10 +1356,16 @@ class Trainer:
                     #     "disp_/{}".format(j),
                     #     disp, self.step)
 
-                    depth = colormap(outputs[("depth", 0, 0)][j, 0])
-                    writer.add_image(
-                        "depth_/{}".format(j),
-                        depth, self.step)
+                    if not mono_depth:
+                        depth = colormap(outputs[("depth", 0, 0)][j, 0])
+                        writer.add_image(
+                            "depth_/{}".format(j),
+                            depth, self.step)
+                    if mono_depth:
+                        depth = colormap(outputs[("mono_depth", 0, 0)][j, 0])
+                        writer.add_image(
+                            "depth_/{}".format(j),
+                            depth, self.step)
 
                     if self.opt.train_stereo_only:
                         disp_gt = colormap((0.0498921 * 423.164) / inputs[("depth_gt")][j, 0])
