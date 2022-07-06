@@ -18,6 +18,7 @@ import glob
 import torch
 import torch.utils.data as data
 from torchvision import transforms
+import matplotlib.pyplot as plt
 from manydepth.utils import readlines
 
 # cv2.setNumThreads(0)
@@ -263,7 +264,7 @@ class IndoorDataset(data.Dataset):
             inputs = {}
 
             do_color_aug = self.is_train and random.random() > 0.5
-            do_flip = False#self.is_train and random.random() > 0.5
+            do_flip = False
 
             folder, frame_index = self.index_to_folder_and_frame_idx(index)
             side = "l"
@@ -273,22 +274,22 @@ class IndoorDataset(data.Dataset):
                 inputs.update(self.get_colors(folder, frame_index, side, do_flip))
             else:
                 for i in self.frame_idxs:
-                    if i == "s":
+                    if i == "s":  # not used
                         other_side = {"r": "l", "l": "r"}[side]
                         inputs[("color", i, -1)] = self.get_color(
                             folder, frame_index, other_side, do_flip, self.input_lookup)
-
 
                     else:
                         try:
                             inputs[("color", i, -1)] = self.get_color(
                                 folder, frame_index + i * self.frame_offset, None, do_flip, self.input_lookup)
 
+                            inputs[("pol00", i, 0)] = self.to_tensor(self.get_color(
+                                folder, frame_index + i * self.frame_offset, None, do_flip, "pol00"))
+
                             if i != 0:
                                 if not self.supervised_depth_only:
                                     pose = self.get_relative_pose(folder, frame_index + i * self.frame_offset, frame_index)
-                                    # if do_flip:
-                                    #     pose = np.linalg.inv(pose)
                                     inputs[("poses", i)] = torch.from_numpy((pose).astype(np.float32))
 
 
@@ -302,14 +303,13 @@ class IndoorDataset(data.Dataset):
                                 raise FileNotFoundError(f'Cannot find frame - make sure your '
                                                         f'--data_path is set correctly, or try adding'
                                                         f' the --png flag. {e}')
-            #print("111111111111")
+
             inputs[("stereo_T")] = torch.from_numpy(np.array([[ 1, 0, 0, -0.0498921],
                                                                [0, 1, 0, 0],
                                                                [0, 0, 1, 0],
                                                                [0, 0, 0, 1]], dtype=np.float32))
 
             self.full_res_shape = inputs[("color", 0, -1)].size
-            #print("22222222222222222222")
             # adjusting intrinsics to match each scale in the pyramid
             for scale in range(self.num_scales):
                 K = self.load_intrinsics(folder)
@@ -323,39 +323,28 @@ class IndoorDataset(data.Dataset):
 
                 inputs[("K", scale)] = torch.from_numpy(K)
                 inputs[("inv_K", scale)] = torch.from_numpy(inv_K)
-            #print("3333333333333333333333333333333")
-            if self.load_depth:# and False:
-                #print("3.1")
+            if self.load_depth:
                 if self.supervised_depth:
-                #    print("3.1.0")
                     depth = self.get_depth_processed(folder, frame_index, side, do_flip, self.depth_modality)
-                #    print("3.1.1")
                     inputs["depth"] = np.expand_dims(depth, 0)
-                #    print("3.1.2")
-                    inputs["depth"] = torch.from_numpy(inputs["depth"].astype(np.float32))#.clamp(0.01, 2.0)
-                #print("3.2")
-                # print(index, folder, frame_index)
+                    inputs["depth"] = torch.from_numpy(inputs["depth"].astype(np.float32))
 
                 depth_gt = self.get_depth_gt(folder, frame_index, side, do_flip)
-                #print("3.3")
                 inputs["depth_gt"] = np.expand_dims(depth_gt, 0)
                 inputs["depth_gt"] = torch.from_numpy(inputs["depth_gt"].astype(np.float32))#.clamp(0.01, 2.0)
-            #print("4444444444444444444444444")
 
             # if self.load_mask:
             #     inputs["mask"] = self.get_mask(folder, frame_index, side, do_flip)
-
 
             transforms.ColorJitter.get_params(
                 self.brightness, self.contrast, self.saturation, self.hue)
             color_aug = transforms.ColorJitter(
                 self.brightness, self.contrast, self.saturation, self.hue)
-            #print("55555555555555555555555")
+
             self.preprocess(inputs, do_color_aug, color_aug)
-            for i in self.frame_idxs:
+            for i in self.frame_idxs:  # i=0
                 del inputs[("color", i, -1)]
                 del inputs[("color_aug", i, -1)]
-            #print("6666666666666666666666666666666666666")
             return inputs
         except:
             print("ERROR DURING LOADING!!!")

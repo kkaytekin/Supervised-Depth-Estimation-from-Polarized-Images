@@ -14,7 +14,7 @@ python3 -m manydepth.train --png --num_depth_bins 96  --num_workers 8 --batch_si
   --depth_supervision True \
   --modality polarization \
   --depth_modality _gt \
-  --model_name RN18_supervised_GT_RGB_only \
+  --model_name Letsmakeitworkfinally \
   --overfit True
 
 #python3 -m manydepth.train --png --num_depth_bins 96  --num_workers 8 --batch_size 12 \
