@@ -27,5 +27,9 @@ def main():
     print("AOLP MEAN: ", AOLP_FILES.mean(axis=(0, 1, 2)))
     print("AOLP STD: ", AOLP_FILES.std(axis=(0, 1, 2)))
 
+    print("XOLP MEAN: ", 0.5 * (DOLP_FILES.mean(axis=(0, 1, 2)) + AOLP_FILES.mean(axis=(0, 1, 2))))
+    print("XOLP STD: ", 0.5 * (DOLP_FILES.std(axis=(0, 1, 2)) + AOLP_FILES.std(axis=(0, 1, 2))))
+
+
 if __name__ == "__main__":
     main()
