@@ -263,7 +263,6 @@ class IndoorDataset(data.Dataset):
             3       images resized to (self.width // 8, self.height // 8)
         """
         try:
-            # if 0 == 0:
             inputs = {}
 
             do_color_aug = self.is_train and random.random() > 0.5
@@ -277,7 +276,7 @@ class IndoorDataset(data.Dataset):
                 inputs.update(self.get_colors(folder, frame_index, side, do_flip))
             else:
                 for i in self.frame_idxs:
-                    if i == "s":  # not used
+                    if i == "s":  # not used in the project
                         other_side = {"r": "l", "l": "r"}[side]
                         inputs[("color", i, -1)] = self.get_color(
                             folder, frame_index, other_side, do_flip, self.input_lookup)
@@ -334,8 +333,6 @@ class IndoorDataset(data.Dataset):
                 K[0, :] *= self.width // (2 ** scale)
                 K[1, :] *= self.height // (2 ** scale)
 
-                # print(K)
-
                 inv_K = np.linalg.pinv(K)
 
                 inputs[("K", scale)] = torch.from_numpy(K)
@@ -365,12 +362,15 @@ class IndoorDataset(data.Dataset):
 
             for i in self.frame_idxs:  # i=0
                 self.get_xolp(inputs, i)
+                inputs[("pol00", i, 0)] = self.to_tensor(inputs[("pol00", i, 0)])
+                inputs[("pol10", i, 0)] = self.to_tensor(inputs[("pol10", i, 0)])
+                inputs[("pol01", i, 0)] = self.to_tensor(inputs[("pol01", i, 0)])
+                inputs[("pol11", i, 0)] = self.to_tensor(inputs[("pol11", i, 0)])
 
             return inputs
         except:
             print("ERROR DURING LOADING!!!")
             print(index, folder, frame_index)
-
 
     def get_xolp(self, inputs, i):
         angles = np.array([0, 45, 90, 135]) * np.pi / 180
@@ -382,7 +382,6 @@ class IndoorDataset(data.Dataset):
         _, dolp, aolp = Iun_and_xolp(im_stack, angles)
         xolp = np.stack((dolp, aolp), axis=2)
         inputs[("xolp", i, 0)] = self.to_tensor(xolp)
-
 
     def get_color(self, folder, frame_index, side, do_flip):
         raise NotImplementedError
