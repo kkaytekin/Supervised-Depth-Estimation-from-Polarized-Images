@@ -5,13 +5,13 @@
 # available in the LICENSE file.
 
 import os
+
 os.environ["MKL_NUM_THREADS"] = "1"  # noqa F402
 os.environ["NUMEXPR_NUM_THREADS"] = "1"  # noqa F402
 os.environ["OMP_NUM_THREADS"] = "1"  # noqa F402
 
 import logging
 from datetime import datetime
-
 
 import numpy as np
 import time
@@ -21,7 +21,7 @@ import torch
 import torch.nn.functional as F
 import torch.optim as optim
 from torch.utils.data import DataLoader
-#from tensorboard import SummaryWriter
+# from tensorboard import SummaryWriter
 
 from torch.utils.tensorboard import SummaryWriter
 
@@ -66,7 +66,7 @@ def tensor2float(vars):
 
 
 def seed_worker(worker_id):
-    worker_seed = torch.initial_seed() % 2**32
+    worker_seed = torch.initial_seed() % 2 ** 32
     np.random.seed(worker_seed)
     random.seed(worker_seed)
 
@@ -91,7 +91,8 @@ class Trainer:
         print('Start training ...')
         if torch.cuda.is_available():
             print('Use GPU: ' + str(torch.cuda.get_device_name(torch.cuda.current_device())))
-            print('With GB: ' + str(torch.cuda.get_device_properties(torch.cuda.current_device()).total_memory // 1024 ** 3))
+            print('With GB: ' + str(
+                torch.cuda.get_device_properties(torch.cuda.current_device()).total_memory // 1024 ** 3))
 
         print('Use batch size: ', self.opt.batch_size)
 
@@ -103,8 +104,6 @@ class Trainer:
         print("Models and tensorboard events files are saved to:\n  ", self.log_path)
         print("Training is using:\n  ", self.device)
 
-
-
         # checking height and width are multiples of 32
         assert self.opt.height % 32 == 0, "'height' must be a multiple of 32"
         assert self.opt.width % 32 == 0, "'width' must be a multiple of 32"
@@ -115,7 +114,6 @@ class Trainer:
         self.num_scales = len(self.opt.scales)
         self.num_input_frames = len(self.opt.frame_ids)
         self.num_pose_frames = 2
-
 
         self.train_teacher_and_pose = not self.opt.freeze_teacher_and_pose
         if self.train_teacher_and_pose:
@@ -162,16 +160,12 @@ class Trainer:
                 # )
 
                 model = dpt.DPTDepthModel(
-                        path=None,
-                        backbone="vitb_rn50_384",
-                        non_negative=True,
-                        enable_attention_hooks=False,
-                        invert=False
-                    )
-
-
-
-
+                    path=None,
+                    backbone="vitb_rn50_384",
+                    non_negative=True,
+                    enable_attention_hooks=False,
+                    invert=False
+                )
 
             self.models["dpt"] = model
             self.models["dpt"].to(self.device)
@@ -181,9 +175,11 @@ class Trainer:
                 if self.opt.train_student:
                     self.models["encoder"] = networks.ResnetEncoderMatching(
                         self.opt.num_layers, self.opt.weights_init == "pretrained",
-                        input_height=self.opt.height, input_width=self.opt.width, #batch_size=self.opt.batch_size, scale=2, in_channels=64, out_channels=64,
+                        input_height=self.opt.height, input_width=self.opt.width,
+                        # batch_size=self.opt.batch_size, scale=2, in_channels=64, out_channels=64,
                         adaptive_bins=True, min_depth_bin=self.opt.min_depth, max_depth_bin=self.opt.max_depth,
-                        depth_binning=self.opt.depth_binning, num_depth_bins=self.opt.num_depth_bins, batch_size=self.opt.batch_size)
+                        depth_binning=self.opt.depth_binning, num_depth_bins=self.opt.num_depth_bins,
+                        batch_size=self.opt.batch_size)
                     self.models["encoder"].to(self.device)
 
                     self.models["depth"] = networks.DepthDecoder(
@@ -231,9 +227,7 @@ class Trainer:
         if self.opt.mono_weights_folder is not None:
             self.load_mono_model()
 
-
         # self.berhuloss = BerHuLoss()
-
 
         print("Training model named:\n  ", self.opt.model_name)
         print("Models and tensorboard events files are saved to:\n  ", self.opt.log_dir)
@@ -259,8 +253,7 @@ class Trainer:
             val_filenames = readlines(fpath.format("val"))
 
         test_filenames = readlines(fpath_test.format("test"))
-        img_ext = '.png' #if self.opt.png else '.jpg'
-
+        img_ext = '.png'  # if self.opt.png else '.jpg'
 
         train_dataset = self.dataset(
             self.data_path, train_filenames, self.opt.height, self.opt.width,
@@ -273,7 +266,9 @@ class Trainer:
             worker_init_fn=seed_worker)
         val_dataset = self.dataset(
             self.data_path, val_filenames, self.opt.height, self.opt.width,
-            frames_to_load, 4, is_train=False, img_ext=img_ext, offset=self.opt.offset, modality=self.opt.modality, supervised_depth=self.opt.depth_supervision, supervised_depth_only=self.opt.depth_supervision_only, depth_modality=self.opt.depth_modality)
+            frames_to_load, 4, is_train=False, img_ext=img_ext, offset=self.opt.offset, modality=self.opt.modality,
+            supervised_depth=self.opt.depth_supervision, supervised_depth_only=self.opt.depth_supervision_only,
+            depth_modality=self.opt.depth_modality)
         self.val_loader = DataLoader(
             val_dataset, self.opt.batch_size, False,
             num_workers=self.opt.num_workers,
@@ -282,14 +277,15 @@ class Trainer:
 
         test_dataset = self.dataset(
             self.data_path_val, test_filenames, self.opt.height, self.opt.width,
-            frames_to_load, 4, is_train=False, img_ext=img_ext, offset=self.opt.offset, modality=self.opt.modality, supervised_depth=self.opt.depth_supervision, supervised_depth_only=self.opt.depth_supervision_only, depth_modality=self.opt.depth_modality)
+            frames_to_load, 4, is_train=False, img_ext=img_ext, offset=self.opt.offset, modality=self.opt.modality,
+            supervised_depth=self.opt.depth_supervision, supervised_depth_only=self.opt.depth_supervision_only,
+            depth_modality=self.opt.depth_modality)
         self.test_loader = DataLoader(
             test_dataset, self.opt.batch_size, False,
             num_workers=self.opt.num_workers, pin_memory=True, drop_last=True)
 
         num_train_samples = len(train_dataset)
         self.num_total_steps = num_train_samples // self.opt.batch_size * self.opt.num_epochs
-
 
         self.writers = {}
         for mode in ["train", "val", "val_mono", "test", "test_mono"]:
@@ -314,15 +310,12 @@ class Trainer:
                 self.project_3d[scale] = Project3D(self.opt.batch_size, h, w)
                 self.project_3d[scale].to(self.device)
 
-
-
         self.depth_metric_names = [
             "de/abs_rel", "de/sq_rel", "de/rms", "de/log_rms", "da/a1", "da/a2", "da/a3"]
 
         self.depth_metric_names_mono = [
-            "de_mono/abs_rel", "de_mono/sq_rel", "de_mono/rms", "de_mono/log_rms", "da_mono/a1", "da_mono/a2", "da_mono/a3"]
-
-
+            "de_mono/abs_rel", "de_mono/sq_rel", "de_mono/rms", "de_mono/log_rms", "da_mono/a1", "da_mono/a2",
+            "da_mono/a3"]
 
         print("Using split:\n  ", self.opt.split)
         print("There are {:d} training items and {:d} validation items and {:d} test items\n".format(
@@ -330,18 +323,17 @@ class Trainer:
 
         self.save_opts()
 
-    def log_args(self,timestamp):
+    def log_args(self, timestamp):
         # Dump the passed arguments into a log file
         os.makedirs(self.log_path, exist_ok=True)
-        logging.basicConfig(filename=os.path.join(self.log_path,'args.log'),
+        logging.basicConfig(filename=os.path.join(self.log_path, 'args.log'),
                             level=logging.INFO,
                             format='%(message)s',
                             )
-        logging.info('Run started at: %s',str(timestamp))
-        logging.info('='*8+'Arguments'+'='*9)
+        logging.info('Run started at: %s', str(timestamp))
+        logging.info('=' * 8 + 'Arguments' + '=' * 9)
         for arg, value in sorted(vars(self.opt).items()):
             logging.info("%s: %r", arg, value)
-
 
     def set_train(self):
         """Convert all models to training mode
@@ -375,7 +367,6 @@ class Trainer:
         self.test()
         self.start_time = time.time()
         for self.epoch in range(self.opt.num_epochs):
-
 
             if self.epoch == self.opt.freeze_teacher_epoch:
                 self.freeze_teacher()
@@ -453,7 +444,6 @@ class Trainer:
             self.step += 1
         self.model_lr_scheduler.step()
 
-
     def process_batch(self, inputs, is_train=False):
         """Pass a minibatch through the network and generate images and losses
         """
@@ -476,12 +466,8 @@ class Trainer:
                 outputs.update(pose_pred)
                 mono_outputs.update(pose_pred)
 
-
-
             lookup_frames = [inputs[('color_aug', idx, 0)] for idx in self.matching_ids[1:]]
             lookup_frames = torch.stack(lookup_frames, 1)  # batch x frames x 3 x h x w
-
-
 
             min_depth_bin = self.min_depth_tracker
             max_depth_bin = self.max_depth_tracker
@@ -501,19 +487,17 @@ class Trainer:
                 feats = self.models["mono_encoder"](inputs["color_aug", 0, 0])
                 mono_outputs.update(self.models['mono_depth'](feats))
 
-
         if not self.opt.depth_supervision_only:
             self.generate_images_pred(inputs, mono_outputs)
         else:
-            #TODO
+            # TODO
             for scale in self.opt.scales:
                 if not self.opt.train_dpt:
                     disp = mono_outputs[("disp", scale)]
                     mono_outputs[("disp", 0, scale)] = disp
 
-
                     disp = F.interpolate(
-                            disp, [self.opt.height, self.opt.width], mode="bilinear", align_corners=False)
+                        disp, [self.opt.height, self.opt.width], mode="bilinear", align_corners=False)
                     source_scale = 0
 
                     _, depth = disp_to_depth(disp, self.opt.min_depth, self.opt.max_depth)
@@ -543,7 +527,6 @@ class Trainer:
         # if not self.opt.depth_supervision_only:
         mono_losses = self.compute_losses(inputs, mono_outputs, is_multi=False)
 
-
         if not self.opt.depth_supervision_only:
             if self.opt.train_student:
                 # update multi frame outputs dictionary with single frame outputs
@@ -553,8 +536,6 @@ class Trainer:
                         _key[0] = 'mono_' + key[0]
                         _key = tuple(_key)
                         outputs[_key] = mono_outputs[key]
-
-
 
                 # grab poses + frames and stack for input to the multi frame network
                 # relative_poses = [mono_outputs[('cam_T_cam', 0, idx)] for idx in self.matching_ids[1:]]
@@ -608,9 +589,6 @@ class Trainer:
 
                 self.generate_images_pred(inputs, outputs, is_multi=True)
 
-
-
-
                 losses = self.compute_losses(inputs, outputs, is_multi=True)
 
                 # update losses with single frame losses
@@ -653,7 +631,6 @@ class Trainer:
         """Predict poses between input frames for monocular sequences.
         """
         outputs = {}
-
 
         if self.num_pose_frames == 2:
             # In this setting, we compute the pose to each source frame via a
@@ -763,7 +740,6 @@ class Trainer:
 
         self.set_train()
 
-
     def test(self):
         """Validate the model on a single minibatch
         """
@@ -803,7 +779,7 @@ class Trainer:
                             outputs.update(pose_pred)
                             mono_outputs.update(pose_pred)
 
-                        # if not self.opt.pose_input:
+                            # if not self.opt.pose_input:
                             relative_poses = [inputs[('relative_pose', idx)] for idx in self.matching_ids[1:]]
                             relative_poses = torch.stack(relative_poses, 1)
 
@@ -811,8 +787,6 @@ class Trainer:
 
                             relative_poses = [inputs[('poses', idx)] for idx in self.matching_ids[1:]]
                             relative_poses = torch.stack(relative_poses, 1)
-
-
 
                         lookup_frames = [inputs[('color', idx, 0)] for idx in self.matching_ids[1:]]
                         lookup_frames = torch.stack(lookup_frames, 1)  # batch x frames x 3 x h x w
@@ -832,7 +806,8 @@ class Trainer:
 
                 depth_pred_mono = depth
                 depth_pred_mono = torch.clamp(F.interpolate(
-                    depth_pred_mono, [self.opt.height, self.opt.width], mode="bilinear", align_corners=False), self.opt.min_depth, self.opt.max_depth)
+                    depth_pred_mono, [self.opt.height, self.opt.width], mode="bilinear", align_corners=False),
+                    self.opt.min_depth, self.opt.max_depth)
                 depth_pred_mono = depth_pred_mono.detach()
                 preds_mono.append(depth_pred_mono.cpu())
 
@@ -868,14 +843,14 @@ class Trainer:
 
                         depth_pred = disp_to_depth(outputs[("disp", 0)], self.opt.min_depth, self.opt.max_depth)[1]
                         depth_pred = torch.clamp(F.interpolate(
-                            depth_pred, [self.opt.height, self.opt.width], mode="bilinear", align_corners=False),self.opt.min_depth, self.opt.max_depth)
+                            depth_pred, [self.opt.height, self.opt.width], mode="bilinear", align_corners=False),
+                            self.opt.min_depth, self.opt.max_depth)
                         depth_pred = depth_pred.detach()
                         preds.append(depth_pred.cpu())
 
                 depth_gt = inputs["depth_gt"]
 
                 gts.append(depth_gt.cpu())
-
 
             if not self.opt.depth_supervision_only:
                 if self.opt.train_student:
@@ -923,8 +898,8 @@ class Trainer:
                     if not self.opt.pose_input:
                         T = outputs[("cam_T_cam", 0, frame_id)]
                     else:
-                        T=T_GT
-                if is_multi:# and self.epoch < self.opt.pose_attach_epoch:
+                        T = T_GT
+                if is_multi:  # and self.epoch < self.opt.pose_attach_epoch:
                     # don't update posenet based on multi frame prediction
                     T = T.detach()
 
@@ -975,7 +950,6 @@ class Trainer:
                 if not self.opt.disable_automasking:
                     outputs[("color_identity", frame_id, scale)] = \
                         inputs[("color", frame_id, source_scale)]
-
 
     def compute_reprojection_loss(self, pred, target):
         """Computes reprojection loss between a batch of predicted and target images
@@ -1053,10 +1027,10 @@ class Trainer:
                 source_scale = 0
 
             if self.opt.train_dpt:
-                disp = torch.nan_to_num(1. / (outputs[("depth", 0, scale)].clamp(self.opt.min_depth, self.opt.max_depth) + 1e-7))
+                disp = torch.nan_to_num(
+                    1. / (outputs[("depth", 0, scale)].clamp(self.opt.min_depth, self.opt.max_depth) + 1e-7))
             else:
                 disp = outputs[("disp", scale)]
-
 
             color = inputs[("color", 0, scale)]
             if not self.opt.depth_supervision_only:
@@ -1067,8 +1041,10 @@ class Trainer:
                     pred = outputs[("color", frame_id, scale)]
                     reprojection_losses.append(self.compute_reprojection_loss(pred, target))
                     if not is_multi and self.opt.res_pose:
-                        reprojection_res_losses.append(torch.min(torch.cat((self.compute_reprojection_loss(outputs[("color_res", frame_id, scale)], target), self.compute_reprojection_loss(inputs[("color", frame_id, source_scale)], target) + torch.randn(
-                        target.mean(1, True).shape).to(self.device) * 0.00001), 1), 1, True)[0])
+                        reprojection_res_losses.append(torch.min(torch.cat((self.compute_reprojection_loss(
+                            outputs[("color_res", frame_id, scale)], target), self.compute_reprojection_loss(
+                            inputs[("color", frame_id, source_scale)], target) + torch.randn(
+                            target.mean(1, True).shape).to(self.device) * 0.00001), 1), 1, True)[0])
                 reprojection_losses = torch.cat(reprojection_losses, 1)
                 if not is_multi and self.opt.res_pose:
                     reprojection_res_losses = torch.cat(reprojection_res_losses, 1)
@@ -1112,9 +1088,7 @@ class Trainer:
                     reprojection_loss_mask = torch.ones_like(reprojection_loss_mask)
                     if not self.opt.disable_motion_masking:
                         reprojection_loss_mask = (reprojection_loss_mask *
-                                                   outputs['consistency_mask'].unsqueeze(1))
-
-
+                                                  outputs['consistency_mask'].unsqueeze(1))
 
                     if not self.opt.no_matching_augmentation:
                         reprojection_loss_mask = (reprojection_loss_mask *
@@ -1127,7 +1101,7 @@ class Trainer:
 
                 # consistency loss:
                 # encourage multi frame prediction to be like singe frame where masking is happening
-                if is_multi:# and self.opt.motion_masking_begin <= self.epoch <= self.opt.motion_masking_end:# and not self.opt.freeze_teacher_and_pose:
+                if is_multi:  # and self.opt.motion_masking_begin <= self.epoch <= self.opt.motion_masking_end:# and not self.opt.freeze_teacher_and_pose:
                     multi_depth = outputs[("depth", 0, scale)]
                     # no gradients for mono prediction!
                     if self.opt.post_process_mono_while_training:
@@ -1145,9 +1119,6 @@ class Trainer:
                 losses['reproj_loss/{}'.format(scale)] = reprojection_loss
 
                 loss += reprojection_loss + consistency_loss
-
-
-
 
                 if not is_multi and self.opt.res_pose:
                     loss += reprojection_res_losses.min(1, True)[0].mean()
@@ -1203,7 +1174,6 @@ class Trainer:
                 losses['sample_loss/{}'.format(scale)] = sample_loss
             # total_loss += 1e-3 * sample_loss
 
-
         losses["loss"] = total_loss
 
         return losses
@@ -1226,7 +1196,8 @@ class Trainer:
             depth_pred = outputs[("depth", 0, 0)]
 
         depth_pred = torch.clamp(F.interpolate(
-            depth_pred, [self.opt.height, self.opt.width], mode="bilinear", align_corners=False), self.opt.min_depth, self.opt.max_depth)
+            depth_pred, [self.opt.height, self.opt.width], mode="bilinear", align_corners=False), self.opt.min_depth,
+            self.opt.max_depth)
         depth_pred = depth_pred.detach()
 
         depth_gt = inputs["depth_gt"]
@@ -1253,7 +1224,6 @@ class Trainer:
             for i, metric in enumerate(self.depth_metric_names):
                 losses[metric] = np.array(depth_errors[i].cpu())
 
-
     def compute_depth_losses_from_list(self, gts, preds, losses):
         """Compute depth metrics, to allow monitoring during training
 
@@ -1267,7 +1237,8 @@ class Trainer:
         for k in range(len(preds)):
             depth_pred_batch = preds[k]
             depth_pred_batch = torch.clamp(F.interpolate(
-                depth_pred_batch, [self.opt.height, self.opt.width], mode="bilinear", align_corners=False), self.opt.min_depth, self.opt.max_depth)
+                depth_pred_batch, [self.opt.height, self.opt.width], mode="bilinear", align_corners=False),
+                self.opt.min_depth, self.opt.max_depth)
 
             depth_gt_batch = gts[k]
 
@@ -1276,8 +1247,6 @@ class Trainer:
 
                 depth_pred = depth_pred_batch.detach()[:, 0].numpy()[b]
                 depth_gt = depth_gt_batch.detach()[:, 0].numpy()[b]
-
-
 
                 gt_height, gt_width = depth_gt.shape[:2]
 
@@ -1316,7 +1285,6 @@ class Trainer:
                 # print(depth_gt.shape)
                 # print(depth_pred.shape)
 
-
                 depth_errors = compute_depth_errors_numpy(depth_gt, depth_pred)
 
                 errors.append(depth_errors)
@@ -1329,18 +1297,18 @@ class Trainer:
         for i, metric in enumerate(self.depth_metric_names):
             losses[metric] = np.array(mean_errors[i])
 
-
     def log_time(self, batch_idx, duration, loss):
         """Print a logging statement to the terminal
         """
         samples_per_sec = self.opt.batch_size / duration
         time_sofar = time.time() - self.start_time
         training_time_left = (
-            self.num_total_steps / self.step - 1.0) * time_sofar if self.step > 0 else 0
+                                     self.num_total_steps / self.step - 1.0) * time_sofar if self.step > 0 else 0
         print_string = "epoch {:>3} | batch {:>6} | examples/s: {:5.1f}" + \
-            " | loss: {:.5f} | time elapsed: {} | time left: {} | timestamp: {}"
+                       " | loss: {:.5f} | time elapsed: {} | time left: {} | timestamp: {}"
         print(print_string.format(self.epoch, batch_idx, samples_per_sec, loss,
-                                  sec_to_hm_str(time_sofar), sec_to_hm_str(training_time_left), time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(time.time()))))
+                                  sec_to_hm_str(time_sofar), sec_to_hm_str(training_time_left),
+                                  time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(time.time()))))
 
     def log(self, mode, inputs, outputs, losses, log_images=True, log_essential_images=False, mono_depth=False):
         """Write an event to the tensorboard events file
@@ -1351,20 +1319,31 @@ class Trainer:
         if log_images or log_essential_images:
             if self.opt.train_stereo_only or self.opt.depth_supervision_only or self.opt.depth_supervision:
                 for j in range(min(4, self.opt.batch_size)):
-                    # disp = colormap(outputs[("disp", 0, 0)][j, 0])
-                    # writer.add_image(
-                    #     "disp_/{}".format(j),
-                    #     disp, self.step)
 
-                    if not mono_depth:
-                        depth = colormap(outputs[("depth", 0, 0)][j, 0])
-                        writer.add_image(
-                            "depth_/{}".format(j),
-                            depth, self.step)
+                    color = inputs[("color", 0, 0)]
+                    color = color[0, :3, :]
+                    color = np.array(color.cpu(), dtype=np.uint)
+                    writer.add_image(
+                        "color/{}".format(j),
+                        color, self.step
+                    )
+
+                    color_aug = inputs[("color_aug", 0, 0)]
+                    color_aug = color_aug[0, :3, :]
+                    color_aug = np.array(color_aug.cpu(), dtype=np.uint)
+                    writer.add_image(
+                        "color_aug/{}".format(j),
+                        color_aug, self.step
+                    )
+
                     if mono_depth:
                         depth = colormap(outputs[("mono_depth", 0, 0)][j, 0])
                         camera_matrix = inputs[("K", 0)][j, :3, :3].unsqueeze(0)
-
+                        writer.add_image(
+                            "depth_/{}".format(j),
+                            depth, self.step)
+                    else:
+                        depth = colormap(outputs[("depth", 0, 0)][j, 0])
                         writer.add_image(
                             "depth_/{}".format(j),
                             depth, self.step)
@@ -1374,7 +1353,6 @@ class Trainer:
                         writer.add_image(
                             "normals_/{}".format(j),
                             normals, self.step)
-
 
                     if self.opt.train_stereo_only:
                         disp_gt = colormap((0.0498921 * 423.164) / inputs[("depth_gt")][j, 0])
@@ -1403,7 +1381,6 @@ class Trainer:
                                 "color_pred_{}_{}/{}".format(frame_id, s, j),
                                 outputs[("color", frame_id, s)][j].data, self.step)
 
-
                             # if self.opt.train_student:
                             #     if s==0:#outputs.get("color_with_gt_pose") is not None:
                             #         writer.add_image(
@@ -1422,16 +1399,12 @@ class Trainer:
                             #             "color_with_gt_depth_gt_pose_DIFF_{}_{}/{}".format(frame_id, s, j),
                             #             torch.abs(inputs[("color", 0, 0)] - outputs[("color_with_gt_depth_gt_pose", frame_id, s)]).mean(1,True)[j].data, self.step)
 
-
-
-
                     if self.opt.train_student:
                         for scale in self.opt.scales:
                             disp = colormap(outputs[("disp", scale)][j, 0])
                             writer.add_image(
                                 "disp_multi_{}/{}".format(scale, j),
                                 disp, self.step)
-
 
                         disp = colormap(outputs[('mono_disp', s)][j, 0])
                         writer.add_image(
@@ -1443,7 +1416,6 @@ class Trainer:
                             writer.add_image(
                                 "disp_{}/{}".format(scale, j),
                                 disp, self.step)
-
 
                     if inputs.get("depth_gt") is not None:
                         depth_gt = colormap(inputs[('depth_gt')][j, 0])
@@ -1613,13 +1585,13 @@ def colormap(inputs, normalize=True, torch_transpose=True):
 def flow2rgb(flow_map, max_value=None):
     flow_map_np = flow_map.detach().cpu().numpy().astype(float)
     _, h, w = flow_map_np.shape
-    flow_map_np[:,(flow_map_np[0] == 0.0) & (flow_map_np[1] == 0.0)] = float('nan')
-    rgb_map = np.ones((3,h,w)).astype(np.float32)
+    flow_map_np[:, (flow_map_np[0] == 0.0) & (flow_map_np[1] == 0.0)] = float('nan')
+    rgb_map = np.ones((3, h, w)).astype(np.float32)
     if max_value is not None:
         normalized_flow_map = flow_map_np / max_value
     else:
         normalized_flow_map = flow_map_np / (np.abs(flow_map_np).max())
     rgb_map[0] += normalized_flow_map[0]
-    rgb_map[1] -= 0.5*(normalized_flow_map[0] + normalized_flow_map[1])
+    rgb_map[1] -= 0.5 * (normalized_flow_map[0] + normalized_flow_map[1])
     rgb_map[2] += normalized_flow_map[1]
-    return rgb_map.clip(0,1)
+    return rgb_map.clip(0, 1)
