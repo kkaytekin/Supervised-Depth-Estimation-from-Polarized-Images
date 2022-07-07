@@ -105,6 +105,8 @@ class XOLPEncoder(nn.Module):
         # fake_normals = input[:,:9,:,:].float()
         # out = self.Conv1(fake_normals)
         #xolp = self.get_debug_XOLP(input)
+        input = (input - 0.08693199701957657) / 0.44430732785457433  # precomputed using 1 XOLP exammple from each sequence in train folder
+
         out = self.Conv1(input)
         out = self.Conv2(out)
         out = self.Conv3(out)
