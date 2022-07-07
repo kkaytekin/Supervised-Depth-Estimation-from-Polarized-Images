@@ -111,6 +111,7 @@ class IndoorDataset(data.Dataset):
             self.resize[i] = transforms.Resize((self.height // s, self.width // s),
                                                interpolation=self.interp)
 
+        self.resize_pol = transforms.Resize((self.height, self.width), interpolation=self.interp)
         self.load_depth = True#self.check_depth()
 
     def get_filenames(self, secquences, frame_idxs, offset, modality, depth_modality):
@@ -284,8 +285,10 @@ class IndoorDataset(data.Dataset):
                             inputs[("color", i, -1)] = self.get_color(
                                 folder, frame_index + i * self.frame_offset, None, do_flip, self.input_lookup)
 
-                            inputs[("pol00", i, 0)] = self.to_tensor(self.get_color(
-                                folder, frame_index + i * self.frame_offset, None, do_flip, "pol00"))
+                            pol00 = self.get_color(
+                                folder, frame_index + i * self.frame_offset, None, do_flip, "pol00")
+                            inputs[("pol00", i, 0)] = self.to_tensor(self.resize_pol(pol00))
+
 
                             if i != 0:
                                 if not self.supervised_depth_only:
