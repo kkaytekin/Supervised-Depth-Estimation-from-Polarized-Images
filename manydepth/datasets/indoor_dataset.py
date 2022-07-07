@@ -15,6 +15,7 @@ from PIL import Image  # using pillow-simd for increased speed
 #import cv2
 import glob
 
+from ..xolp import Iun_and_xolp
 import torch
 import torch.utils.data as data
 from torchvision import transforms
@@ -289,6 +290,18 @@ class IndoorDataset(data.Dataset):
                                 folder, frame_index + i * self.frame_offset, None, do_flip, "pol00")
                             inputs[("pol00", i, 0)] = self.to_tensor(self.resize_pol(pol00))
 
+                            pol10 = self.get_color(
+                                folder, frame_index + i * self.frame_offset, None, do_flip, "pol10")
+                            inputs[("pol10", i, 0)] = self.to_tensor(self.resize_pol(pol10))
+
+                            pol01 = self.get_color(
+                                folder, frame_index + i * self.frame_offset, None, do_flip, "pol01")
+                            inputs[("pol01", i, 0)] = self.to_tensor(self.resize_pol(pol01))
+
+                            pol11 = self.get_color(
+                                folder, frame_index + i * self.frame_offset, None, do_flip, "pol11")
+                            inputs[("pol11", i, 0)] = self.to_tensor(self.resize_pol(pol11))
+
 
                             if i != 0:
                                 if not self.supervised_depth_only:
@@ -348,11 +361,16 @@ class IndoorDataset(data.Dataset):
             for i in self.frame_idxs:  # i=0
                 del inputs[("color", i, -1)]
                 del inputs[("color_aug", i, -1)]
+
+            self.get_xolp(inputs)
             return inputs
         except:
             print("ERROR DURING LOADING!!!")
             print(index, folder, frame_index)
 
+
+    def get_xolp(self, inputs):
+        pass
 
     def get_color(self, folder, frame_index, side, do_flip):
         raise NotImplementedError
