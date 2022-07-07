@@ -6,13 +6,14 @@
 
 import os
 import random
+
 os.environ["MKL_NUM_THREADS"] = "1"  # noqa F402
 os.environ["NUMEXPR_NUM_THREADS"] = "1"  # noqa F402
 os.environ["OMP_NUM_THREADS"] = "1"  # noqa F402
 
 import numpy as np
 from PIL import Image  # using pillow-simd for increased speed
-#import cv2
+# import cv2
 import glob
 
 from ..xolp import Iun_and_xolp
@@ -22,20 +23,25 @@ from torchvision import transforms
 import matplotlib.pyplot as plt
 from manydepth.utils import readlines
 
+
 # cv2.setNumThreads(0)
 
 
-def pil_loader(path):
+def pil_loader(path, version="color"):
     # open path as file to avoid ResourceWarning
     # (https://github.com/python-pillow/Pillow/issues/835)
     with open(path, 'rb') as f:
         with Image.open(f) as img:
-            return img.convert('RGB')
+            if version == "color":
+                return img.convert('RGB')
+            elif version == "gray":
+                return img.convert('L')
 
 
 class IndoorDataset(data.Dataset):
     """Superclass for monocular dataloaders
     """
+
     def __init__(self,
                  data_path,
                  secquences,
@@ -61,7 +67,6 @@ class IndoorDataset(data.Dataset):
         self.supervised_depth_only = supervised_depth_only
         self.depth_modality = depth_modality
 
-
         self.input_lookup = "rgb"
         if modality == "d435":
             self.input_lookup = "no_proj_left"
@@ -83,7 +88,6 @@ class IndoorDataset(data.Dataset):
             self.frame_idxs = frame_idxs
 
         self.is_train = is_train
-
 
         self.loader = pil_loader
         self.to_tensor = transforms.ToTensor()
@@ -113,7 +117,7 @@ class IndoorDataset(data.Dataset):
                                                interpolation=self.interp)
 
         self.resize_pol = transforms.Resize((self.height, self.width), interpolation=self.interp)
-        self.load_depth = True#self.check_depth()
+        self.load_depth = True  # self.check_depth()
 
     def get_filenames(self, secquences, frame_idxs, offset, modality, depth_modality):
         filenames = []
@@ -139,7 +143,6 @@ class IndoorDataset(data.Dataset):
                     secquences_filtered.append(new_secquence)
                     new_secquence = []
 
-
                 old_frame_index = frame_index
 
             secquences_filtered.append(new_secquence)
@@ -160,7 +163,7 @@ class IndoorDataset(data.Dataset):
                     if id != "s":
                         f_str = "{:06d}{}".format(frame_index + id * offset, self.img_ext)
 
-                        file = os.path.join(folder, input_lookup, f_str)#filenames_in_sec[k + id]
+                        file = os.path.join(folder, input_lookup, f_str)  # filenames_in_sec[k + id]
                         if not os.path.isfile(file):
                             valid = False
 
@@ -224,19 +227,17 @@ class IndoorDataset(data.Dataset):
 
     def load_intrinsics(self, folder):
         K = np.array([[0.58, 0, 0.5, 0],
-                           [0, 0.60, 0.5, 0],
-                           [0, 0, 1, 0],
-                           [0, 0, 0, 1]], dtype=np.float32)
+                      [0, 0.60, 0.5, 0],
+                      [0, 0, 1, 0],
+                      [0, 0, 0, 1]], dtype=np.float32)
         # k = readlines(os.path.join(folder, "intrinsics.txt")).split()
         with open(os.path.join(folder, "intrinsics.txt"), 'r') as f:
-            k = f.read().split()#.splitlines()
-        k = np.array(k).reshape(3,3)
-        K[:3,:3] = k
+            k = f.read().split()  # .splitlines()
+        k = np.array(k).reshape(3, 3)
+        K[:3, :3] = k
 
         K[0, :] /= self.full_res_shape[0]
         K[1, :] /= self.full_res_shape[1]
-
-
 
         return K.copy()
 
@@ -262,7 +263,7 @@ class IndoorDataset(data.Dataset):
             3       images resized to (self.width // 8, self.height // 8)
         """
         try:
-        # if 0 == 0:
+            # if 0 == 0:
             inputs = {}
 
             do_color_aug = self.is_train and random.random() > 0.5
@@ -286,26 +287,26 @@ class IndoorDataset(data.Dataset):
                             inputs[("color", i, -1)] = self.get_color(
                                 folder, frame_index + i * self.frame_offset, None, do_flip, self.input_lookup)
 
-                            pol00 = self.get_color(
+                            pol00 = self.get_gray(
                                 folder, frame_index + i * self.frame_offset, None, do_flip, "pol00")
-                            inputs[("pol00", i, 0)] = self.to_tensor(self.resize_pol(pol00))
+                            inputs[("pol00", i, 0)] = self.resize_pol(pol00)
 
-                            pol10 = self.get_color(
+                            pol10 = self.get_gray(
                                 folder, frame_index + i * self.frame_offset, None, do_flip, "pol10")
-                            inputs[("pol10", i, 0)] = self.to_tensor(self.resize_pol(pol10))
+                            inputs[("pol10", i, 0)] = self.resize_pol(pol10)
 
-                            pol01 = self.get_color(
+                            pol01 = self.get_gray(
                                 folder, frame_index + i * self.frame_offset, None, do_flip, "pol01")
-                            inputs[("pol01", i, 0)] = self.to_tensor(self.resize_pol(pol01))
+                            inputs[("pol01", i, 0)] = self.resize_pol(pol01)
 
-                            pol11 = self.get_color(
+                            pol11 = self.get_gray(
                                 folder, frame_index + i * self.frame_offset, None, do_flip, "pol11")
-                            inputs[("pol11", i, 0)] = self.to_tensor(self.resize_pol(pol11))
-
+                            inputs[("pol11", i, 0)] = self.resize_pol(pol11)
 
                             if i != 0:
                                 if not self.supervised_depth_only:
-                                    pose = self.get_relative_pose(folder, frame_index + i * self.frame_offset, frame_index)
+                                    pose = self.get_relative_pose(folder, frame_index + i * self.frame_offset,
+                                                                  frame_index)
                                     inputs[("poses", i)] = torch.from_numpy((pose).astype(np.float32))
 
 
@@ -320,10 +321,10 @@ class IndoorDataset(data.Dataset):
                                                         f'--data_path is set correctly, or try adding'
                                                         f' the --png flag. {e}')
 
-            inputs[("stereo_T")] = torch.from_numpy(np.array([[ 1, 0, 0, -0.0498921],
-                                                               [0, 1, 0, 0],
-                                                               [0, 0, 1, 0],
-                                                               [0, 0, 0, 1]], dtype=np.float32))
+            inputs[("stereo_T")] = torch.from_numpy(np.array([[1, 0, 0, -0.0498921],
+                                                              [0, 1, 0, 0],
+                                                              [0, 0, 1, 0],
+                                                              [0, 0, 0, 1]], dtype=np.float32))
 
             self.full_res_shape = inputs[("color", 0, -1)].size
             # adjusting intrinsics to match each scale in the pyramid
@@ -347,7 +348,7 @@ class IndoorDataset(data.Dataset):
 
                 depth_gt = self.get_depth_gt(folder, frame_index, side, do_flip)
                 inputs["depth_gt"] = np.expand_dims(depth_gt, 0)
-                inputs["depth_gt"] = torch.from_numpy(inputs["depth_gt"].astype(np.float32))#.clamp(0.01, 2.0)
+                inputs["depth_gt"] = torch.from_numpy(inputs["depth_gt"].astype(np.float32))  # .clamp(0.01, 2.0)
 
             # if self.load_mask:
             #     inputs["mask"] = self.get_mask(folder, frame_index, side, do_flip)
@@ -362,15 +363,26 @@ class IndoorDataset(data.Dataset):
                 del inputs[("color", i, -1)]
                 del inputs[("color_aug", i, -1)]
 
-            self.get_xolp(inputs)
+            for i in self.frame_idxs:  # i=0
+                self.get_xolp(inputs, i)
+
             return inputs
         except:
             print("ERROR DURING LOADING!!!")
             print(index, folder, frame_index)
 
 
-    def get_xolp(self, inputs):
-        pass
+    def get_xolp(self, inputs, i):
+        angles = np.array([0, 45, 90, 135]) * np.pi / 180
+        im00 = np.asarray(inputs[("pol00", i, 0)])  # 0 deg
+        im10 = np.asarray(inputs[("pol10", i, 0)])  # 90 deg
+        im01 = np.asarray(inputs[("pol01", i, 0)])  # 45 deg
+        im11 = np.asarray(inputs[("pol11", i, 0)])  # 135 deg
+        im_stack = np.stack((im00, im01, im10, im11), axis=2)  # correct, 320x480x4
+        _, dolp, aolp = Iun_and_xolp(im_stack, angles)
+        xolp = np.stack((dolp, aolp), axis=2)
+        inputs[("xolp", i, 0)] = self.to_tensor(xolp)
+
 
     def get_color(self, folder, frame_index, side, do_flip):
         raise NotImplementedError

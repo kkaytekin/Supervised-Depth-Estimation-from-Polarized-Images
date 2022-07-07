@@ -58,12 +58,21 @@ class HAMMER_Dataset(IndoorDataset):
 
     def get_color(self, folder, frame_index, side, do_flip, input_lookup="rgb"):
         path = self.get_image_path(folder, frame_index, side, input_lookup)
-        color = self.loader(path)
+        color = self.loader(path, "color")
 
         if do_flip:
             color = color.transpose(pil.FLIP_LEFT_RIGHT)
 
         return color
+
+    def get_gray(self, folder, frame_index, side, do_flip, input_lookup="rgb"):
+        path = self.get_image_path(folder, frame_index, side, input_lookup)
+        gray = self.loader(path, "gray")
+
+        if do_flip:
+            gray = gray.transpose(pil.FLIP_LEFT_RIGHT)
+
+        return gray
 
     def get_image_path(self, folder, frame_index, side=None, input_lookup="rgb"):
         f_str = "{:06d}{}".format(frame_index, self.img_ext)
