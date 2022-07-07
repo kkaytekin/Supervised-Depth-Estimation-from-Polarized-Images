@@ -272,6 +272,14 @@ class MonodepthOptions:
                                  action='store_true',
                                  help="If set, will not apply static camera augmentation or "
                                       "zero cost volume augmentation during training")
+        self.parser.add_argument("--augment_normals",
+                                 help="If set true, use normals_encoder to extract features "
+                                 "from normals, and augment them to the depth encoder. ",
+                                 action="store_true")
+        self.parser.add_argument("--augment_xolp",
+                                 help="If set true, use xolp_encoder to extract features from "
+                                      "xolp data in the dataloader, and augment to the depth encoder. ",
+                                 action="store_true")
 
         # SYSTEM options
         self.parser.add_argument("--no_cuda",
