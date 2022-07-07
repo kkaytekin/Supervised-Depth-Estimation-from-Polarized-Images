@@ -760,7 +760,9 @@ class ResnetEncoder(nn.Module):
             self.num_ch_enc[1:] *= 4
 
     def forward(self, input_image):
+
         self.features = []
+        # print("RESNET ENCODER: ", input_image) # 0-1 interval
         x = (input_image - 0.45) / 0.225
         x = self.encoder.conv1(x)
         x = self.encoder.bn1(x)

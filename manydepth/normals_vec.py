@@ -54,3 +54,4 @@ def calc_normals(phi, theta):
     #print("N3: ", N3.shape)
     N = torch.cat((N1, N2, N3), dim=1)  # Bx3xHxW
     return N
+
