@@ -14,8 +14,10 @@ python3 -m manydepth.train --png --num_depth_bins 96  --num_workers 8 --batch_si
   --depth_supervision True \
   --modality polarization \
   --depth_modality _gt \
-  --model_name Letsmakeitworkfinally \
-  --overfit True
+  --model_name Letsmakeitfinallywork_RGB \
+  --augment_xolp \
+  --augment_normals \
+#  --overfit True
 
 #python3 -m manydepth.train --png --num_depth_bins 96  --num_workers 8 --batch_size 12 \
 #  --data_path /media/jungo/Research/Datasets/HAMMER/train/ \

@@ -35,7 +35,6 @@ from manydepth import datasets, networks, dpt
 import matplotlib.pyplot as plt
 
 from kornia.geometry.depth import depth_to_normals
-# from pytorch3d import
 import roma
 
 _DEPTH_COLORMAP = plt.get_cmap('plasma', 256)  # for plotting
@@ -82,10 +81,10 @@ class Trainer:
         self.data_path = self.opt.data_path
         self.data_path_val = self.opt.data_path_val
         self.log_dir = self.opt.log_dir
-        # self.log_path = os.path.join(self.opt.log_dir, self.opt.model_name)
 
         timestamp = datetime.now()
-        self.log_path = os.path.join(self.opt.log_dir, self.opt.model_name + '_' + timestamp.strftime("%m-%d_%H-%M-%S"))
+        self.log_path = os.path.join(self.opt.log_dir,
+                                     self.opt.model_name + '_' + timestamp.strftime("%m-%d_%H-%M-%S"))
         self.log_args(timestamp)
 
         print('Start training ...')
@@ -182,8 +181,34 @@ class Trainer:
                         batch_size=self.opt.batch_size)
                     self.models["encoder"].to(self.device)
 
-                    self.models["depth"] = networks.DepthDecoder(
-                        self.models["encoder"].num_ch_enc, self.opt.scales)
+                    if self.opt.augment_normals and self.opt.augment_xolp:
+                        self.models["normals_encoder"] = networks.NormalsEncoder(dropout_rate=.1)
+                        self.models["normals_encoder"].to(self.device)
+                        self.parameters_to_train += list(self.models["normals_encoder"].parameters())
+
+                        self.models["xolp_encoder"] = networks.XOLPEncoder(dropout_rate=.1)
+                        self.models["xolp_encoder"].to(self.device)
+                        self.parameters_to_train += list(self.models["xolp_encoder"].parameters())
+
+                        self.models["depth"] = networks.DepthDecoder(
+                            self.models["encoder"].num_ch_enc, self.opt.scales, augment_normals=True, augment_xolp=True)
+                    elif self.opt.augment_normals:
+                        self.models["normals_encoder"] = networks.NormalsEncoder(dropout_rate=.1)
+                        self.models["normals_encoder"].to(self.device)
+                        self.parameters_to_train += list(self.models["normals_encoder"].parameters())
+
+                        self.models["depth"] = networks.DepthDecoder(
+                            self.models["encoder"].num_ch_enc, self.opt.scales, augment_normals=True)
+                    elif self.opt.augment_xolp:
+                        self.models["xolp_encoder"] = networks.XOLPEncoder(dropout_rate=.1)
+                        self.models["xolp_encoder"].to(self.device)
+                        self.parameters_to_train += list(self.models["xolp_encoder"].parameters())
+
+                        self.models["depth"] = networks.DepthDecoder(
+                            self.models["encoder"].num_ch_enc, self.opt.scales, augment_xolp=True)
+                    else:
+                        self.models["depth"] = networks.DepthDecoder(
+                            self.models["encoder"].num_ch_enc, self.opt.scales)
                     self.models["depth"].to(self.device)
 
                     self.parameters_to_train += list(self.models["encoder"].parameters())
@@ -193,9 +218,39 @@ class Trainer:
                 networks.ResnetEncoder(18, self.opt.weights_init == "pretrained")
             self.models["mono_encoder"].to(self.device)
 
-            self.models["mono_depth"] = \
-                networks.DepthDecoder(self.models["mono_encoder"].num_ch_enc, self.opt.scales)
-            self.models["mono_depth"].to(self.device)
+            if self.opt.augment_normals and self.opt.augment_xolp:
+                self.models["normals_encoder"] = networks.NormalsEncoder(dropout_rate=.1)
+                self.models["normals_encoder"].to(self.device)
+                self.parameters_to_train += list(self.models["normals_encoder"].parameters())
+
+                self.models["xolp_encoder"] = networks.XOLPEncoder(dropout_rate=.1)
+                self.models["xolp_encoder"].to(self.device)
+                self.parameters_to_train += list(self.models["xolp_encoder"].parameters())
+
+                self.models["mono_depth"] = \
+                    networks.DepthDecoder(self.models["mono_encoder"].num_ch_enc, self.opt.scales, augment_normals=True,
+                                          augment_xolp=True)
+                self.models["mono_depth"].to(self.device)
+            elif self.opt.augment_normals:
+                self.models["normals_encoder"] = networks.NormalsEncoder(dropout_rate=.1)
+                self.models["normals_encoder"].to(self.device)
+                self.parameters_to_train += list(self.models["normals_encoder"].parameters())
+
+                self.models["mono_depth"] = \
+                    networks.DepthDecoder(self.models["mono_encoder"].num_ch_enc, self.opt.scales, augment_normals=True)
+                self.models["mono_depth"].to(self.device)
+            elif self.opt.augment_xolp:
+                self.models["xolp_encoder"] = networks.XOLPEncoder(dropout_rate=.1)
+                self.models["xolp_encoder"].to(self.device)
+                self.parameters_to_train += list(self.models["xolp_encoder"].parameters())
+
+                self.models["mono_depth"] = \
+                    networks.DepthDecoder(self.models["mono_encoder"].num_ch_enc, self.opt.scales, augment_xolp=True)
+                self.models["mono_depth"].to(self.device)
+            else:
+                self.models["mono_depth"] = \
+                    networks.DepthDecoder(self.models["mono_encoder"].num_ch_enc, self.opt.scales)
+                self.models["mono_depth"].to(self.device)
 
             if self.train_teacher_and_pose:
                 self.parameters_to_train += list(self.models["mono_encoder"].parameters())
@@ -478,9 +533,16 @@ class Trainer:
                 depth_dpt = self.models["dpt"](inputs["color_aug", 0, 0])
                 mono_outputs[("depth", 0, 0)] = depth_dpt.unsqueeze(1)
             else:
-                feats = self.models["mono_encoder"](inputs["color_aug", 0, 0])
-                mono_outputs.update(self.models['mono_depth'](feats))
+                rgb_feats = self.models["mono_encoder"](inputs["color_aug", 0, 0].float())
+                feats = rgb_feats
+                if self.opt.augment_xolp:
+                    xolp_feats = self.models["xolp_encoder"](inputs["xolp", 0, 0].float())
+                    feats[-1] = torch.cat((feats[-1], xolp_feats), 1)
+                if self.opt.augment_normals:
+                    normal_feats = self.models["normals_encoder"](inputs["xolp", 0, 0].float())
+                    feats[-1] = torch.cat((feats[-1], normal_feats), 1)
 
+                mono_outputs.update(self.models['mono_depth'](feats))
 
         else:
             with torch.no_grad():
@@ -609,7 +671,7 @@ class Trainer:
         return outputs, losses, mono_outputs
 
     def update_adaptive_depth_bins(self, outputs):
-        """Update the current estimates of min/max depth using exponental weighted average"""
+        """Update the current estimates of min/max depth using exponential weighted average"""
 
         min_depth = outputs[('mono_depth', 0, 0)].detach().min(-1)[0].min(-1)[0]
         max_depth = outputs[('mono_depth', 0, 0)].detach().max(-1)[0].max(-1)[0]
@@ -767,7 +829,15 @@ class Trainer:
                     # print(depth_dpt.mean())
                     mono_outputs[("depth", 0, 0)] = depth_dpt.unsqueeze(1)
                 else:
-                    feats = self.models["mono_encoder"](inputs["color", 0, 0])
+
+                    rgb_feats = self.models["mono_encoder"](inputs["color_aug", 0, 0].float())
+                    feats = rgb_feats
+                    if self.opt.augment_xolp:
+                        xolp_feats = self.models["xolp_encoder"](inputs["xolp", 0, 0].float())
+                        feats[-1] = torch.cat((feats[-1], xolp_feats), 1)
+                    if self.opt.augment_normals:
+                        normal_feats = self.models["normals_encoder"](inputs["xolp", 0, 0].float())
+                        feats[-1] = torch.cat((feats[-1], normal_feats), 1)
                     mono_outputs.update(self.models['mono_depth'](feats))
 
                 if not self.opt.depth_supervision_only:
@@ -1322,7 +1392,7 @@ class Trainer:
 
                     color = inputs[("color", 0, 0)]
                     color = color[0, :3, :]
-                    color = np.array(color.cpu(), dtype=np.uint)
+                    color = np.array(color.cpu())
                     writer.add_image(
                         "color/{}".format(j),
                         color, self.step
@@ -1330,7 +1400,7 @@ class Trainer:
 
                     color_aug = inputs[("color_aug", 0, 0)]
                     color_aug = color_aug[0, :3, :]
-                    color_aug = np.array(color_aug.cpu(), dtype=np.uint)
+                    color_aug = np.array(color_aug.cpu())
                     writer.add_image(
                         "color_aug/{}".format(j),
                         color_aug, self.step

@@ -72,8 +72,8 @@ class NormalsEncoder(nn.Module):
         # Input has 12 channels for now so two lines below should not work
         # It looks like this function is not used at all
         # Is the encoder fully integrated?
-        rho = input[:, 3, :, :].squeeze(dim=1)  # BxHxW
-        phi = input[:, 4, :, :].squeeze(dim=1)  # BxHxW
+        rho = input[:, 0, :, :].squeeze(dim=1)  # BxHxW
+        phi = input[:, 1, :, :].squeeze(dim=1)  # BxHxW
 
         theta_diff = rho_diffuse(rho, n)  # BxHxW
         theta_spec1, theta_spec2 = rho_spec(rho, n)  # BxHxW
