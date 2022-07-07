@@ -36,7 +36,7 @@ class IndoorDataset(data.Dataset):
     """
     def __init__(self,
                  data_path,
-                 sequences,
+                 secquences,
                  height,
                  width,
                  frame_idxs,
@@ -45,7 +45,6 @@ class IndoorDataset(data.Dataset):
                  # modality="l515_rgbd",
                  # modality="d435",
                  modality="polarization",
-                 input_lookup="pol",
                  is_train=False,
                  img_ext='.png',
                  supervised_depth=False,
@@ -66,10 +65,9 @@ class IndoorDataset(data.Dataset):
             self.input_lookup = "no_proj_left"
 
         self.data_path = data_path
-        self.sequences = sequences
+        self.secquences = secquences
         self.modality = modality
-        self.filenames = self.get_filenames(self.sequences, frame_idxs, offset, modality, depth_modality,
-                                            self.input_lookup)
+        self.filenames = self.get_filenames(self.secquences, frame_idxs, offset, modality, depth_modality)
         self.height = height
         self.width = width
         self.num_scales = num_scales
@@ -114,7 +112,7 @@ class IndoorDataset(data.Dataset):
 
         self.load_depth = True#self.check_depth()
 
-    def get_filenames(self, sequences, frame_idxs, offset, modality, depth_modality, input_lookup):
+    def get_filenames(self, secquences, frame_idxs, offset, modality, depth_modality):
         filenames = []
         filters = ["00", "10", "01", "11"]
         for filter in filters:
@@ -186,36 +184,34 @@ class IndoorDataset(data.Dataset):
         # print(filenames_out)
         return filenames_out
 
-    # def preprocess(self, inputs, do_color_aug, color_aug)
-    def preprocess(self, inputs):
+    def preprocess(self, inputs, do_color_aug, color_aug):
         """Resize colour images to the required scales and augment if required
 
         We create the color_aug object in advance and apply the same augmentation to all
         images in this item. This ensures that all images input to the pose network receive the
         same augmentation.
         """
-        # for k in list(inputs):
-        #     if "color" in k:
-        #         n, im, i = k
-        #
-        #         for i in range(self.num_scales):
-        #             inputs[(n, im, i)] = self.resize[i]((inputs[(n, im, i - 1)]))
+        for k in list(inputs):
+            if "color" in k:
+                n, im, i = k
+                for i in range(self.num_scales):
+                    inputs[(n, im, i)] = self.resize[i](inputs[(n, im, i - 1)])
 
         for k in list(inputs):
             f = inputs[k]
             if "color" in k:
                 n, im, i = k
                 inputs[(n, im, i)] = self.to_tensor(f)
-                # # check it isn't a blank frame - keep _aug as zeros so we can check for it
-                # if inputs[(n, im, i)].sum() == 0:
-                #     inputs[(n + "_aug", im, i)] = inputs[(n, im, i)]
-                # else:
-                #     if do_color_aug:
-                #
-                #         aug = color_aug(f)
-                #     else:
-                #         aug = f
-                #     inputs[(n + "_aug", im, i)] = self.to_tensor(aug)
+                # check it isn't a blank frame - keep _aug as zeros so we can check for it
+                if inputs[(n, im, i)].sum() == 0:
+                    inputs[(n + "_aug", im, i)] = inputs[(n, im, i)]
+                else:
+                    if do_color_aug:
+
+                        aug = color_aug(f)
+                    else:
+                        aug = f
+                    inputs[(n + "_aug", im, i)] = self.to_tensor(aug)
 
     def __len__(self):
         return len(self.filenames)
@@ -257,24 +253,26 @@ class IndoorDataset(data.Dataset):
             2       images resized to (self.width // 4, self.height // 4)
             3       images resized to (self.width // 8, self.height // 8)
         """
-
-        # IMPORTANT: in the current version of DepthFromPol, just 0 scale is used
         try:
         # if 0 == 0:
             inputs = {}
+
             do_color_aug = self.is_train and random.random() > 0.5
             do_flip = False #self.is_train and random.random() > 0.5
 
             folder, frame_index = self.index_to_folder_and_frame_idx(index)
-
             side = "l"
 
             poses = {}
-            if type(self).__name__ in ["Indoordataset", "HAMMER_Dataset"]:
+            if type(self).__name__ in ["CityscapesPreprocessedDataset", "CityscapesEvalDataset"]:
+                inputs.update(self.get_colors(folder, frame_index, side, do_flip))
+            else:
                 for i in self.frame_idxs:
 
                     if i == "s":
                         other_side = {"r": "l", "l": "r"}[side]
+                        inputs[("color", i, -1)] = self.get_color(
+                            folder, frame_index, other_side, do_flip, self.input_lookup)
 
                         im00 = self.get_color(
                             folder, frame_index + i * self.frame_offset, None, do_flip, self.input_lookup, "00")
@@ -298,29 +296,8 @@ class IndoorDataset(data.Dataset):
 
                     else:
                         try:
-                            im00 = self.get_color(
-                                folder, frame_index + i * self.frame_offset, None, do_flip, self.input_lookup, "00")
-                            im10 = self.get_color(
-                                folder, frame_index + i * self.frame_offset, None, do_flip, self.input_lookup, "10")
-                            im01 = self.get_color(
-                                folder, frame_index + i * self.frame_offset, None, do_flip, self.input_lookup, "01")
-                            im11 = self.get_color(
-                                folder, frame_index + i * self.frame_offset, None, do_flip, self.input_lookup, "11")
-                            im00 = np.asarray(im00)
-                            im10 = np.asarray(im10)
-                            im01 = np.asarray(im01)
-                            im11 = np.asarray(im11)
-                            images = np.concatenate((im00, im10, im01, im11), axis=2)
-
-                            # images = np.reshape(images, (480, 320, 12))
-                            # print("Shape img: ", images.shape)
-
-
-                            inputs[("color", i, 0)] = images
-                            inputs[("color_aug", i, 0)] = images  # tmp (needed because other parts of the code use color_aug)
-
-                            # inputs[("color", i, -1)] = self.get_color(
-                            #     folder, frame_index + i * self.frame_offset, None, do_flip, self.input_lookup, "11")
+                            inputs[("color", i, -1)] = self.get_color(
+                                folder, frame_index + i * self.frame_offset, None, do_flip, self.input_lookup)
 
                             if i != 0:
                                 if not self.supervised_depth_only:
@@ -333,10 +310,8 @@ class IndoorDataset(data.Dataset):
                         except FileNotFoundError as e:
                             if i != 0:
                                 # fill with dummy values
-                                inputs[("color", i, 0)] = \
+                                inputs[("color", i, -1)] = \
                                     Image.fromarray(np.zeros((100, 100, 3)).astype(np.uint8))
-                                inputs[("color_aug", i, 0)] = \
-                                    Image.fromarray(np.zeros((100, 100, 3)).astype(np.uint8)) # tmp (needed because other parts of the code use color_aug)
                                 poses[i] = None
                             else:
                                 raise FileNotFoundError(f'Cannot find frame - make sure your '
@@ -353,6 +328,7 @@ class IndoorDataset(data.Dataset):
             # adjusting intrinsics to match each scale in the pyramid
             for scale in range(self.num_scales):
                 K = self.load_intrinsics(folder)
+
                 K[0, :] *= self.width // (2 ** scale)
                 K[1, :] *= self.height // (2 ** scale)
 

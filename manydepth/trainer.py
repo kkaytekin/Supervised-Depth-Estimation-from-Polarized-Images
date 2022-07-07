@@ -150,6 +150,13 @@ class Trainer:
             else:
                 net_w = self.opt.width
                 net_h = self.opt.height
+                # model = dpt.DPTDepthModel(
+                #     path=None,
+                #     backbone="vitl16_384",
+                #     non_negative=True,
+                #     enable_attention_hooks=False,
+                #     invert=False
+                # )
 
                 model = dpt.DPTDepthModel(
                     path=None,
@@ -240,11 +247,9 @@ class Trainer:
             print("OVERFITTING")
             train_filenames = [self.opt.overfit_scene]
             val_filenames = [self.opt.overfit_scene]
-            test_filenames = [self.opt.overfit_scene]
         else:
             train_filenames = readlines(fpath.format("train"))
             val_filenames = readlines(fpath.format("val"))
-            test_filenames = readlines(fpath_test.format("test"))
 
         img_ext = '.png'  # if self.opt.png else '.jpg'
 
@@ -253,17 +258,10 @@ class Trainer:
             frames_to_load, 4, is_train=True, img_ext=img_ext, offset=self.opt.offset, modality=self.opt.modality,
             supervised_depth=self.opt.depth_supervision, supervised_depth_only=self.opt.depth_supervision_only,
             depth_modality=self.opt.depth_modality)
-        # for key, value in train_dataset[0].items():
-        #     print(key)
-
-        # print("DIMENSION: ", train_dataset[0][('color_aug', 0, 0)].shape)
-
-        # print("TRAIN DATASET LENGTH: ", len(train_dataset))
         self.train_loader = DataLoader(
             train_dataset, self.opt.batch_size, True,
             num_workers=self.opt.num_workers, pin_memory=True, drop_last=True,
             worker_init_fn=seed_worker)
-
         val_dataset = self.dataset(
             self.data_path, val_filenames, self.opt.height, self.opt.width,
             frames_to_load, 4, is_train=False, img_ext=img_ext, offset=self.opt.offset, modality=self.opt.modality,
@@ -284,7 +282,6 @@ class Trainer:
         self.test_loader = DataLoader(
             test_dataset, self.opt.batch_size, False,
             num_workers=self.opt.num_workers, pin_memory=True, drop_last=True)
-
 
         num_train_samples = len(train_dataset)
         self.num_total_steps = num_train_samples // self.opt.batch_size * self.opt.num_epochs
@@ -321,8 +318,7 @@ class Trainer:
 
         print("Using split:\n  ", self.opt.split)
         print("There are {:d} training items and {:d} validation items and {:d} test items\n".format(
-            int(len(train_dataset)/4), int(len(val_dataset)/4), int(len(test_dataset)/4))) # without dividing by 4 it counts 4 filters
-                                                                                           # of the same image as 4 dataset samples
+            len(train_dataset), len(val_dataset), len(test_dataset)))
 
         self.save_opts()
 
@@ -759,7 +755,7 @@ class Trainer:
             preds_mono = []
             # print(self.test_loader.__len__)
             for batch_idx, inputs in enumerate(self.test_loader):
-                # print("batch_idx: ", batch_idx)
+                # print(batch_idx)
                 for key, ipt in inputs.items():
                     inputs[key] = ipt.to(self.device)
 
@@ -869,10 +865,7 @@ class Trainer:
 
             del losses
             losses = {}
-            #print("MONO Depth Test:")
-
-            #print("preds_mono HERE: ", preds_mono)
-
+            print("MONO Depth Test:")
             self.compute_depth_losses_from_list(gts, preds_mono, losses)
             self.log("test_mono", inputs, outputs, losses, log_images=False)
 
@@ -1241,11 +1234,6 @@ class Trainer:
         This isn't particularly accurate as it averages over the entire batch,
         so is only used to give an indication of validation performance
         """
-
-        # print("gts: ", gts)
-        # print("preds: ", preds)
-        # print("losses: ", losses)
-
         errors = []
         MIN_DEPTH = self.opt.min_depth
         MAX_DEPTH = self.opt.max_depth
@@ -1305,10 +1293,7 @@ class Trainer:
 
                 errors.append(depth_errors)
 
-        # print("errors: ", errors)
-
         mean_errors = np.array(errors).mean(0)
-        # print("mean_errors: ", mean_errors)
 
         print("\n  " + ("{:>8} | " * 7).format("abs_rel", "sq_rel", "rmse", "rmse_log", "a1", "a2", "a3"))
         print(("&{: 8.5f}  " * 7).format(*mean_errors.tolist()) + "\\\\")
