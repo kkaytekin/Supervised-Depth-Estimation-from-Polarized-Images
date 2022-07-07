@@ -1342,17 +1342,17 @@ class Trainer:
                         writer.add_image(
                             "depth_/{}".format(j),
                             depth, self.step)
-                    else:
-                        depth = colormap(outputs[("depth", 0, 0)][j, 0])
-                        writer.add_image(
-                            "depth_/{}".format(j),
-                            depth, self.step)
 
                         normals = depth_to_normals(outputs[("mono_depth", 0, 0)][j].unsqueeze(0), camera_matrix)
                         normals = normals.squeeze(0).cpu().numpy()
                         writer.add_image(
                             "normals_/{}".format(j),
                             normals, self.step)
+                    else:
+                        depth = colormap(outputs[("depth", 0, 0)][j, 0])
+                        writer.add_image(
+                            "depth_/{}".format(j),
+                            depth, self.step)
 
                     if self.opt.train_stereo_only:
                         disp_gt = colormap((0.0498921 * 423.164) / inputs[("depth_gt")][j, 0])
