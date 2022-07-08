@@ -924,6 +924,7 @@ class Trainer:
                         preds.append(depth_pred.cpu())
 
                 depth_gt = inputs["depth_gt"]
+
                 gts.append(depth_gt.cpu())
                 mask = inputs[("mask", 0, 0)]
                 masks.append(mask.cpu())

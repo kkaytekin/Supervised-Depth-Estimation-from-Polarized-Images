@@ -46,8 +46,8 @@ def rho_spec(rho, n):
 
 
 def calc_normals(phi, theta):
-    phi = phi.cuda()
-    theta = theta.cuda()
+    phi = phi.cuda() if torch.cuda.is_available() else phi.cpu()
+    theta = theta.cuda() if torch.cuda.is_available() else theta.cpu()
     N1 = (torch.cos(phi) * torch.sin(theta)).unsqueeze(dim=1)  # Bx1xHxW
     N2 = (torch.sin(phi) * torch.sin(theta)).unsqueeze(dim=1)  # Bx1xHxW
     N3 = torch.cos(theta).unsqueeze(dim=1)  # Bx1xHxW
