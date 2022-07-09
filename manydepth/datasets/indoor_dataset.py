@@ -302,6 +302,11 @@ class IndoorDataset(data.Dataset):
                                 folder, frame_index + i * self.frame_offset, None, do_flip, "pol11")
                             inputs[("pol11", i, 0)] = self.resize_pol(pol11)
 
+                            mask = self.get_gray(
+                                folder, frame_index + i * self.frame_offset, None, do_flip, "_instance")
+                            inputs[("mask", i, 0)] = (self.to_tensor(self.resize_pol(mask)) * 255).int()  # 1x320x480, 0-255
+                            
+
                             if i != 0:
                                 if not self.supervised_depth_only:
                                     pose = self.get_relative_pose(folder, frame_index + i * self.frame_offset,
