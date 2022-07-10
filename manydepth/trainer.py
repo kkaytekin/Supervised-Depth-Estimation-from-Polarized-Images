@@ -343,7 +343,7 @@ class Trainer:
         self.num_total_steps = num_train_samples // self.opt.batch_size * self.opt.num_epochs
 
         self.writers = {}
-        for mode in ["train", "val", "val_mono", "test", "test_mono", "test_mono_glass"]:
+        for mode in ["train", "val", "val_mono", "test", "test_mono", "test_mono_glass", "test_mono_metal", "test_mono_ceramic"]:
             self.writers[mode] = SummaryWriter(os.path.join(self.log_path, mode))
 
         if not self.opt.no_ssim:
@@ -945,6 +945,18 @@ class Trainer:
             self.compute_depth_losses_from_list(gts, preds_mono, losses, masks, "glass")
             self.log("test_mono_glass", inputs, outputs, losses, log_images=False, log_essential_images=False, mono_depth=False)
 
+            losses = {}
+            print("\nMONO DEPTH Test - METAL:")
+            self.compute_depth_losses_from_list(gts, preds_mono, losses, masks, "metal")
+            self.log("test_mono_metal", inputs, outputs, losses, log_images=False, log_essential_images=False,
+                     mono_depth=False)
+
+            losses = {}
+            print("\nMONO DEPTH Test - CERAMIC:")
+            self.compute_depth_losses_from_list(gts, preds_mono, losses, masks, "ceramic")
+            self.log("test_mono_ceramic", inputs, outputs, losses, log_images=False, log_essential_images=False,
+                     mono_depth=False)
+
     def generate_images_pred(self, inputs, outputs, is_multi=False):
         """Generate the warped (reprojected) color images for a minibatch.
         Generated images are saved into the `outputs` dictionary.
@@ -1333,11 +1345,19 @@ class Trainer:
                     depth_pred = depth_pred[mask]  # 1 dim array of non-zero values
                     depth_gt = depth_gt[mask]  # 1 dim array of non-zero values
 
-                elif material == "glass":
+                else:
                     mask_gt = masks_batch.detach()[:, 0].numpy()[b]  # 320x480
-                    mask_glass = np.logical_and(mask_gt >= 160, mask_gt <= 160)
-                    mask_final = np.logical_and(mask == 1, mask_glass == 1)
 
+                    if material == "glass":
+                        mask_material = np.logical_and(mask_gt >= 160, mask_gt <= 160)
+
+                    elif material == "metal":
+                        mask_material = np.logical_and(mask_gt >= 140, mask_gt <= 140)
+
+                    elif material == "ceramic":
+                        mask_material = np.logical_and(mask_gt >= 120, mask_gt <= 120)
+
+                    mask_final = np.logical_and(mask == 1, mask_material == 1)
                     depth_pred = depth_pred[mask_final]  # 1 dim array of non-zero values
                     depth_gt = depth_gt[mask_final]  # 1 dim array of non-zero values
 
