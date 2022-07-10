@@ -343,7 +343,7 @@ class Trainer:
         self.num_total_steps = num_train_samples // self.opt.batch_size * self.opt.num_epochs
 
         self.writers = {}
-        for mode in ["train", "val", "val_mono", "test", "test_mono"]:
+        for mode in ["train", "val", "val_mono", "test", "test_mono", "test_mono_glass"]:
             self.writers[mode] = SummaryWriter(os.path.join(self.log_path, mode))
 
         if not self.opt.no_ssim:
@@ -812,6 +812,7 @@ class Trainer:
             gts = []
             preds = []
             preds_mono = []
+            masks = []
             # print(self.test_loader.__len__)
             for batch_idx, inputs in enumerate(self.test_loader):
                 # print(batch_idx)
@@ -919,8 +920,9 @@ class Trainer:
                         preds.append(depth_pred.cpu())
 
                 depth_gt = inputs["depth_gt"]
-
                 gts.append(depth_gt.cpu())
+                mask = inputs[("mask", 0, 0)]
+                masks.append(mask.cpu())
 
             if not self.opt.depth_supervision_only:
                 if self.opt.train_student:
@@ -930,10 +932,18 @@ class Trainer:
                     self.log("test", inputs, outputs, losses, log_images=False)
 
             del losses
+            # print("MASKS LEN: ", len(masks))  # 10
+            # print("MASKS SHAPE: ", masks[0].shape)  # 12x1x320x480
+
             losses = {}
             print("MONO Depth Test:")
-            self.compute_depth_losses_from_list(gts, preds_mono, losses)
+            self.compute_depth_losses_from_list(gts, preds_mono, losses, masks, "all")
             self.log("test_mono", inputs, outputs, losses, log_images=False, log_essential_images=True, mono_depth=True)
+
+            losses = {}
+            print("\nMONO DEPTH Test - GLASS:")
+            self.compute_depth_losses_from_list(gts, preds_mono, losses, masks, "glass")
+            self.log("test_mono_glass", inputs, outputs, losses, log_images=False, log_essential_images=False, mono_depth=False)
 
     def generate_images_pred(self, inputs, outputs, is_multi=False):
         """Generate the warped (reprojected) color images for a minibatch.
@@ -1294,7 +1304,7 @@ class Trainer:
             for i, metric in enumerate(self.depth_metric_names):
                 losses[metric] = np.array(depth_errors[i].cpu())
 
-    def compute_depth_losses_from_list(self, gts, preds, losses):
+    def compute_depth_losses_from_list(self, gts, preds, losses, masks, material="all"):
         """Compute depth metrics, to allow monitoring during training
 
         This isn't particularly accurate as it averages over the entire batch,
@@ -1303,7 +1313,6 @@ class Trainer:
         errors = []
         MIN_DEPTH = self.opt.min_depth
         MAX_DEPTH = self.opt.max_depth
-
         for k in range(len(preds)):
             depth_pred_batch = preds[k]
             depth_pred_batch = torch.clamp(F.interpolate(
@@ -1311,49 +1320,32 @@ class Trainer:
                 self.opt.min_depth, self.opt.max_depth)
 
             depth_gt_batch = gts[k]
+            masks_batch = masks[k]
+            # print(masks_batch.shape)  # 12x1x320x480
 
             for b in range(self.opt.batch_size):
-                # depth_pred = outputs[("depth", 0, 0)]
 
                 depth_pred = depth_pred_batch.detach()[:, 0].numpy()[b]
                 depth_gt = depth_gt_batch.detach()[:, 0].numpy()[b]
+                mask = np.logical_and(depth_gt > MIN_DEPTH, depth_gt < MAX_DEPTH)  # 320x480
 
-                gt_height, gt_width = depth_gt.shape[:2]
+                if material == "all":
+                    depth_pred = depth_pred[mask]  # 1 dim array of non-zero values
+                    depth_gt = depth_gt[mask]  # 1 dim array of non-zero values
 
-                mask = np.logical_and(depth_gt > MIN_DEPTH, depth_gt < MAX_DEPTH)
-                # crop = np.array([0.40810811 * gt_height, 0.99189189 * gt_height,
-                #                  0.03594771 * gt_width, 0.96405229 * gt_width]).astype(np.int32)
-                # crop_mask = np.zeros(mask.shape)
-                # crop_mask[crop[0]:crop[1], crop[2]:crop[3]] = 1
-                # mask = np.logical_and(mask, crop_mask)
+                elif material == "glass":
+                    mask_gt = masks_batch.detach()[:, 0].numpy()[b]  # 320x480
+                    mask_glass = np.logical_and(mask_gt >= 160, mask_gt <= 160)
+                    mask_final = np.logical_and(mask == 1, mask_glass == 1)
 
-                depth_pred = depth_pred[mask]
-                depth_gt = depth_gt[mask]
-
-                # depth_gt = inputs["depth_gt"]
-
-                # mask = depth_gt > 0
-
-                # garg/eigen crop
-                # crop_mask = torch.zeros_like(mask)
-                # crop_mask[:, :, 153:371, 44:1197] = 1
-                # mask = mask * crop_mask
-
-                # depth_gt = depth_gt[mask]
-                # depth_pred = depth_pred[mask]
-
-                # print(depth_gt.shape)
-                # print(depth_pred.shape)
+                    depth_pred = depth_pred[mask_final]  # 1 dim array of non-zero values
+                    depth_gt = depth_gt[mask_final]  # 1 dim array of non-zero values
 
                 if not self.opt.depth_supervision and not self.opt.train_stereo_only:
                     depth_pred *= np.median(depth_gt) / np.median(depth_pred)
 
-                # depth_pred = torch.clamp(depth_pred, min=1e-3, max=80)
                 depth_pred[depth_pred < MIN_DEPTH] = MIN_DEPTH
                 depth_pred[depth_pred > MAX_DEPTH] = MAX_DEPTH
-
-                # print(depth_gt.shape)
-                # print(depth_pred.shape)
 
                 depth_errors = compute_depth_errors_numpy(depth_gt, depth_pred)
 
