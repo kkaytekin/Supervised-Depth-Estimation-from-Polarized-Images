@@ -286,21 +286,21 @@ class IndoorDataset(data.Dataset):
                             inputs[("color", i, -1)] = self.get_color(
                                 folder, frame_index + i * self.frame_offset, None, do_flip, self.input_lookup)
 
-                            pol00 = self.get_gray(
+                            pol00_gray = self.get_gray(
                                 folder, frame_index + i * self.frame_offset, None, do_flip, "pol00")
-                            inputs[("pol00", i, 0)] = self.resize_pol(pol00)
+                            inputs[("pol00_gray", i, 0)] = self.resize_pol(pol00_gray)
 
-                            pol10 = self.get_gray(
+                            pol10_gray = self.get_gray(
                                 folder, frame_index + i * self.frame_offset, None, do_flip, "pol10")
-                            inputs[("pol10", i, 0)] = self.resize_pol(pol10)
+                            inputs[("pol10_gray", i, 0)] = self.resize_pol(pol10_gray)
 
-                            pol01 = self.get_gray(
+                            pol01_gray = self.get_gray(
                                 folder, frame_index + i * self.frame_offset, None, do_flip, "pol01")
-                            inputs[("pol01", i, 0)] = self.resize_pol(pol01)
+                            inputs[("pol01_gray", i, 0)] = self.resize_pol(pol01_gray)
 
-                            pol11 = self.get_gray(
+                            pol11_gray = self.get_gray(
                                 folder, frame_index + i * self.frame_offset, None, do_flip, "pol11")
-                            inputs[("pol11", i, 0)] = self.resize_pol(pol11)
+                            inputs[("pol11_gray", i, 0)] = self.resize_pol(pol11_gray)
 
                             mask = self.get_gray(
                                 folder, frame_index + i * self.frame_offset, None, do_flip, "_instance")
@@ -367,10 +367,10 @@ class IndoorDataset(data.Dataset):
 
             for i in self.frame_idxs:  # i=0
                 self.get_xolp(inputs, i)
-                inputs[("pol00", i, 0)] = self.to_tensor(inputs[("pol00", i, 0)])
-                inputs[("pol10", i, 0)] = self.to_tensor(inputs[("pol10", i, 0)])
-                inputs[("pol01", i, 0)] = self.to_tensor(inputs[("pol01", i, 0)])
-                inputs[("pol11", i, 0)] = self.to_tensor(inputs[("pol11", i, 0)])
+                inputs[("pol00_gray", i, 0)] = self.to_tensor(inputs[("pol00_gray", i, 0)])
+                inputs[("pol10_gray", i, 0)] = self.to_tensor(inputs[("pol10_gray", i, 0)])
+                inputs[("pol01_gray", i, 0)] = self.to_tensor(inputs[("pol01_gray", i, 0)])
+                inputs[("pol11_gray", i, 0)] = self.to_tensor(inputs[("pol11_gray", i, 0)])
 
             return inputs
         except:
@@ -379,10 +379,10 @@ class IndoorDataset(data.Dataset):
 
     def get_xolp(self, inputs, i):
         angles = np.array([0, 45, 90, 135]) * np.pi / 180
-        im00 = np.asarray(inputs[("pol00", i, 0)])  # 0 deg
-        im10 = np.asarray(inputs[("pol10", i, 0)])  # 90 deg
-        im01 = np.asarray(inputs[("pol01", i, 0)])  # 45 deg
-        im11 = np.asarray(inputs[("pol11", i, 0)])  # 135 deg
+        im00 = np.asarray(inputs[("pol00_gray", i, 0)])  # 0 deg
+        im10 = np.asarray(inputs[("pol10_gray", i, 0)])  # 90 deg
+        im01 = np.asarray(inputs[("pol01_gray", i, 0)])  # 45 deg
+        im11 = np.asarray(inputs[("pol11_gray", i, 0)])  # 135 deg
         im_stack = np.stack((im00, im01, im10, im11), axis=2)  # correct, 320x480x4
         _, dolp, aolp = Iun_and_xolp(im_stack, angles)
         xolp = np.stack((dolp, aolp), axis=2)
