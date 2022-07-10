@@ -208,7 +208,7 @@ class IndoorDataset(data.Dataset):
 
         for k in list(inputs):
             f = inputs[k]
-            if "color" in k or "pol00" in k or "pol10" in k or "pol01" in k or "pol11" in k:
+            if "color" in k:
                 n, im, i = k
                 inputs[(n, im, i)] = self.to_tensor(f)
                 # check it isn't a blank frame - keep _aug as zeros so we can check for it
@@ -221,11 +221,45 @@ class IndoorDataset(data.Dataset):
                         aug = f
                     inputs[(n + "_aug", im, i)] = self.to_tensor(aug)
 
+        # flag start here
+        list0 = []
+        list1 = []
+        list2 = []
+        list3 = []
+        for k in list(inputs):
+            if "pol00" in k or "pol10" in k or "pol01" in k or "pol11" in k:
+                n, im, i = k
+                if do_color_aug:
+                    if i == 0:
+                        list0.append(self.to_tensor(color_aug(inputs[(n, im, i)])))
+                    if i == 1:
+                        list1.append(self.to_tensor(color_aug(inputs[(n, im, i)])))
+                    if i == 2:
+                        list2.append(self.to_tensor(color_aug(inputs[(n, im, i)])))
+                    if i == 3:
+                        list3.append(self.to_tensor(color_aug(inputs[(n, im, i)])))
+                else:
+                    if i == 0:
+                        list0.append(self.to_tensor(inputs[(n, im, i)]))
+                    if i == 1:
+                        list1.append(self.to_tensor(inputs[(n, im, i)]))
+                    if i == 2:
+                        list2.append(self.to_tensor(inputs[(n, im, i)]))
+                    if i == 3:
+                        list3.append(self.to_tensor(inputs[(n, im, i)]))
+
+        inputs[("color_aug", 0, 0)] = torch.cat(list0, dim=0)
+        inputs[("color_aug", 0, 1)] = torch.cat(list1, dim=0)
+        inputs[("color_aug", 0, 2)] = torch.cat(list2, dim=0)
+        inputs[("color_aug", 0, 3)] = torch.cat(list3, dim=0)
+
         for i in range(self.num_scales):  # assuming there's only 0 image
-            inputs[("color_aug", 0, i)] = torch.cat((inputs["pol00_aug", 0, i], inputs["pol01_aug", 0, i],
-                                                     inputs["pol10_aug", 0, i], inputs["pol11_aug", 0, i]), dim=0)
+            del inputs["pol00", 0, i]
+            del inputs["pol01", 0, i]
+            del inputs["pol10", 0, i]
+            del inputs["pol11", 0, i]
 
-
+        # flag finish here
 
     def __len__(self):
         return len(self.filenames)
@@ -291,6 +325,7 @@ class IndoorDataset(data.Dataset):
                             inputs[("color", i, -1)] = self.get_color(
                                 folder, frame_index + i * self.frame_offset, None, do_flip, self.input_lookup)
 
+                            # flag start here
                             inputs[("pol00", i, -1)] = self.get_color(
                                 folder, frame_index + i * self.frame_offset, None, do_flip, "pol00")
 
@@ -302,6 +337,7 @@ class IndoorDataset(data.Dataset):
 
                             inputs[("pol11", i, -1)] = self.get_color(
                                 folder, frame_index + i * self.frame_offset, None, do_flip, "pol11")
+                            # flag finish here
 
                             pol00_gray = self.get_gray(
                                 folder, frame_index + i * self.frame_offset, None, do_flip, "pol00")
@@ -385,6 +421,7 @@ class IndoorDataset(data.Dataset):
                 del inputs[("pol01", i, -1)]
                 del inputs[("pol11", i, -1)]
 
+            for i in self.frame_idxs:
                 self.get_xolp(inputs, i)
 
                 inputs[("pol00_gray", i, 0)] = self.to_tensor(inputs[("pol00_gray", i, 0)])
