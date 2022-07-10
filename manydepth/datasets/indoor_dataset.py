@@ -201,14 +201,14 @@ class IndoorDataset(data.Dataset):
         same augmentation.
         """
         for k in list(inputs):
-            if "color" in k:
+            if "color" in k or "pol00" in k or "pol10" in k or "pol01" in k or "pol11" in k:
                 n, im, i = k
                 for i in range(self.num_scales):
                     inputs[(n, im, i)] = self.resize[i](inputs[(n, im, i - 1)])
 
         for k in list(inputs):
             f = inputs[k]
-            if "color" in k:
+            if "color" in k or "pol00" in k or "pol10" in k or "pol01" in k or "pol11" in k:
                 n, im, i = k
                 inputs[(n, im, i)] = self.to_tensor(f)
                 # check it isn't a blank frame - keep _aug as zeros so we can check for it
@@ -216,11 +216,16 @@ class IndoorDataset(data.Dataset):
                     inputs[(n + "_aug", im, i)] = inputs[(n, im, i)]
                 else:
                     if do_color_aug:
-
                         aug = color_aug(f)
                     else:
                         aug = f
                     inputs[(n + "_aug", im, i)] = self.to_tensor(aug)
+
+        for i in range(self.num_scales):  # assuming there's only 0 image
+            inputs[("color_aug", 0, i)] = torch.cat((inputs["pol00_aug", 0, i], inputs["pol01_aug", 0, i],
+                                                     inputs["pol10_aug", 0, i], inputs["pol11_aug", 0, i]), dim=0)
+
+
 
     def __len__(self):
         return len(self.filenames)
@@ -276,7 +281,7 @@ class IndoorDataset(data.Dataset):
                 inputs.update(self.get_colors(folder, frame_index, side, do_flip))
             else:
                 for i in self.frame_idxs:
-                    if i == "s":  # not used in the project
+                    if i == "s":  # not used in the depthfrompol project
                         other_side = {"r": "l", "l": "r"}[side]
                         inputs[("color", i, -1)] = self.get_color(
                             folder, frame_index, other_side, do_flip, self.input_lookup)
@@ -285,6 +290,18 @@ class IndoorDataset(data.Dataset):
                         try:
                             inputs[("color", i, -1)] = self.get_color(
                                 folder, frame_index + i * self.frame_offset, None, do_flip, self.input_lookup)
+
+                            inputs[("pol00", i, -1)] = self.get_color(
+                                folder, frame_index + i * self.frame_offset, None, do_flip, "pol00")
+
+                            inputs[("pol10", i, -1)] = self.get_color(
+                                folder, frame_index + i * self.frame_offset, None, do_flip, "pol10")
+
+                            inputs[("pol01", i, -1)] = self.get_color(
+                                folder, frame_index + i * self.frame_offset, None, do_flip, "pol01")
+
+                            inputs[("pol11", i, -1)] = self.get_color(
+                                folder, frame_index + i * self.frame_offset, None, do_flip, "pol11")
 
                             pol00_gray = self.get_gray(
                                 folder, frame_index + i * self.frame_offset, None, do_flip, "pol00")
@@ -305,14 +322,12 @@ class IndoorDataset(data.Dataset):
                             mask = self.get_gray(
                                 folder, frame_index + i * self.frame_offset, None, do_flip, "_instance")
                             inputs[("mask", i, 0)] = (self.to_tensor(self.resize_pol(mask)) * 255).int()  # 1x320x480, 0-255
-                            
 
                             if i != 0:
                                 if not self.supervised_depth_only:
                                     pose = self.get_relative_pose(folder, frame_index + i * self.frame_offset,
                                                                   frame_index)
                                     inputs[("poses", i)] = torch.from_numpy((pose).astype(np.float32))
-
 
                         except FileNotFoundError as e:
                             if i != 0:
@@ -330,7 +345,7 @@ class IndoorDataset(data.Dataset):
                                                               [0, 0, 1, 0],
                                                               [0, 0, 0, 1]], dtype=np.float32))
 
-            self.full_res_shape = inputs[("color", 0, -1)].size
+            self.full_res_shape = inputs[("color", 0, -1)].size  # only H and W matter
             # adjusting intrinsics to match each scale in the pyramid
             for scale in range(self.num_scales):
                 K = self.load_intrinsics(folder)
@@ -361,12 +376,17 @@ class IndoorDataset(data.Dataset):
                 self.brightness, self.contrast, self.saturation, self.hue)
 
             self.preprocess(inputs, do_color_aug, color_aug)
+
             for i in self.frame_idxs:  # i=0
                 del inputs[("color", i, -1)]
                 del inputs[("color_aug", i, -1)]
+                del inputs[("pol00", i, -1)]
+                del inputs[("pol10", i, -1)]
+                del inputs[("pol01", i, -1)]
+                del inputs[("pol11", i, -1)]
 
-            for i in self.frame_idxs:  # i=0
                 self.get_xolp(inputs, i)
+
                 inputs[("pol00_gray", i, 0)] = self.to_tensor(inputs[("pol00_gray", i, 0)])
                 inputs[("pol10_gray", i, 0)] = self.to_tensor(inputs[("pol10_gray", i, 0)])
                 inputs[("pol01_gray", i, 0)] = self.to_tensor(inputs[("pol01_gray", i, 0)])
