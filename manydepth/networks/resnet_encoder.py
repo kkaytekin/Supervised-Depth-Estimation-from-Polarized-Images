@@ -755,6 +755,13 @@ class ResnetEncoder(nn.Module):
             self.encoder = resnet_multiimage_input(num_layers, pretrained, num_input_images)
         else:
             self.encoder = resnets[num_layers](pretrained)
+            ### adjusting input channel number
+            weight = self.encoder.conv1.weight.clone()
+            self.encoder.conv1 = nn.Conv2d(12, 64, kernel_size=7, stride=2, padding=3, bias=False)
+            with torch.no_grad():
+                self.encoder.conv1.weight[:, :3] = weight
+                self.encoder.conv1.weight[:, 3] = self.encoder.conv1.weight[:, 0]
+            ###
 
         if num_layers > 34:
             self.num_ch_enc[1:] *= 4
