@@ -1220,11 +1220,21 @@ class Trainer:
                         inputs[("depth")] <= self.opt.max_depth).float()
                 # if is_multi:
                 depth = outputs[("depth", 0, scale)]
+
                 # else:
                 #     depth = outputs[("depth", 0, scale)]
                 supervised_depth_loss = ((torch.abs(inputs[("depth")] - depth) * mask).sum() / mask.sum())
+                # print("DEPTH LOSS: ", supervised_depth_loss)
+                # print(depth.shape)
+                # print(inputs["depth"].shape)
+                # print(inputs[("K", 0)].shape)
+                # print(mask.shape)
+                supervised_normals_loss = self.compute_supervised_normals_losses(inputs[("depth")], depth, inputs[("K", 0)], mask)
+                # print("NORMALS LOSS: ", supervised_normals_loss)
+
                 losses['supervised_depth_loss/{}'.format(scale)] = supervised_depth_loss
                 loss += supervised_depth_loss
+                loss += (0.35 * supervised_normals_loss)
             else:
                 losses['supervised_depth_loss/{}'.format(scale)] = 0.
 
@@ -1269,6 +1279,30 @@ class Trainer:
         losses["loss"] = total_loss
 
         return losses
+
+    def compute_supervised_normals_losses(self, depth_gt, depth_pred, intrinsics, mask):
+
+        # print(depth_gt.shape)
+        # print(depth_pred.shape)
+        # print(intrinsics.shape)
+        # print(mask.shape)
+
+        camera_matrix = intrinsics[:, :3, :3]  # expected Bx3x3
+        # print("camera: ", camera_matrix.shape)
+        depth_gt = depth_gt # expected Bx1xHxW
+        # print("depth_gt: ", depth_gt.shape)
+        depth_pred = depth_pred  # expected Bx1xHxW
+        # print("depth_pred: ", depth_pred.shape)
+        normals_gt = depth_to_normals(depth_gt, camera_matrix)  # expected Bx3xHxW
+        # print("normals_gt: ", normals_gt.shape)
+        normals_pred = depth_to_normals(depth_pred, camera_matrix)  # expected Bx3xHxW
+        # print("normals_pred: ", normals_pred.shape)
+        cos_sim = F.cosine_similarity(normals_gt, normals_pred, dim=1).unsqueeze(1).to(self.device)  # expected Bx1xHxW, there are some negative values
+        # print("Negative values in cos_sim: ", (cos_sim < 0).sum())
+        # print("Non-negative values in cos_sim: ", (cos_sim >= 0).sum())
+        # print("cos_sim: ", cos_sim.shape)
+        normals_loss = (((2 * torch.ones(cos_sim.shape)).to(self.device) - cos_sim) * mask).sum() / mask.sum()
+        return normals_loss
 
     def compute_depth_losses(self, inputs, outputs, losses, mono=False):
         """Compute depth metrics, to allow monitoring during training
@@ -1430,6 +1464,12 @@ class Trainer:
                         writer.add_image(
                             "normals_/{}".format(j),
                             normals, self.step)
+
+                        normals_gt = depth_to_normals(inputs[("depth")][j].unsqueeze(0), camera_matrix)
+                        normals_gt = normals_gt.squeeze(0).cpu().numpy()
+                        writer.add_image(
+                            "normals_gt/{}".format(j),
+                            normals_gt, self.step)
                     else:
                         depth = colormap(outputs[("depth", 0, 0)][j, 0])
                         writer.add_image(
