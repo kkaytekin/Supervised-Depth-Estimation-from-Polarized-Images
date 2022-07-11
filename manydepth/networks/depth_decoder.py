@@ -14,8 +14,7 @@ from manydepth.layers import ConvBlock, Conv3x3, upsample, Conv5x5
 
 class DepthDecoder(nn.Module):
     def __init__(self, num_ch_enc, scales=range(4), num_output_channels=1,
-                 use_skips=True, uncertainty=False,augment_normals=False,
-                 augment_xolp = False):
+                 use_skips=True, uncertainty=False):
         super(DepthDecoder, self).__init__()
 
         self.num_output_channels = num_output_channels
@@ -24,10 +23,6 @@ class DepthDecoder(nn.Module):
         self.scales = scales
 
         self.num_ch_enc = num_ch_enc
-        if augment_normals:
-            self.num_ch_enc[-1] += 256
-        if augment_xolp:
-            self.num_ch_enc[-1] += 256
         self.num_ch_dec = np.array([16, 32, 64, 128, 256])
 
         # decoder
