@@ -152,7 +152,7 @@ class ShallowEncoder(nn.Module):
         ## Input:
         # xolp(C=2) or normals(C=9): BXCxHxW
         ## Output:
-        # extracted features: Bx256xHxW
+        # extracted features: Bx64xHxW
         input = self.normalizeInput(input, self.mode)
         out = self.Conv1(input) # 160x240
         # out = self.Maxpool1(out)
