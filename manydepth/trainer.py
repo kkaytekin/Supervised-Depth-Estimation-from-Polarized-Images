@@ -1498,18 +1498,13 @@ class Trainer:
         if log_images or log_essential_images:
             if self.opt.train_stereo_only or self.opt.depth_supervision_only or self.opt.depth_supervision:
                 for j in range(min(4, self.opt.batch_size)):
-
-                    color = inputs[("color", 0, 0)]
-                    color = color[0, :3, :]
-                    color = np.array(color.cpu())
+                    color = inputs[("color", 0, 0)][j]
                     writer.add_image(
                         "color/{}".format(j),
                         color, self.step
                     )
 
-                    color_aug = inputs[("color_aug", 0, 0)]
-                    color_aug = color_aug[0, :3, :]
-                    color_aug = np.array(color_aug.cpu())
+                    color_aug = inputs[("color_aug", 0, 0)][j][:3]
                     writer.add_image(
                         "color_aug/{}".format(j),
                         color_aug, self.step
