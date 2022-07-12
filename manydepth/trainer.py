@@ -1461,15 +1461,17 @@ class Trainer:
 
                         normals = depth_to_normals(outputs[("mono_depth", 0, 0)][j].unsqueeze(0), camera_matrix)
                         normals = normals.squeeze(0).cpu().numpy()
+                        normals_disp = 0.5 * normals + 0.5
                         writer.add_image(
                             "normals_/{}".format(j),
-                            normals, self.step)
+                            normals_disp, self.step)
 
                         normals_gt = depth_to_normals(inputs[("depth")][j].unsqueeze(0), camera_matrix)
                         normals_gt = normals_gt.squeeze(0).cpu().numpy()
+                        normals_gt_disp = 0.5 * normals_gt + 0.5
                         writer.add_image(
                             "normals_gt/{}".format(j),
-                            normals_gt, self.step)
+                            normals_gt_disp, self.step)
                     else:
                         depth = colormap(outputs[("depth", 0, 0)][j, 0])
                         writer.add_image(
