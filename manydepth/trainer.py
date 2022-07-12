@@ -343,7 +343,11 @@ class Trainer:
         self.num_total_steps = num_train_samples // self.opt.batch_size * self.opt.num_epochs
 
         self.writers = {}
-        for mode in ["train", "val", "val_mono", "test", "test_mono", "test_mono_glass", "test_mono_metal", "test_mono_ceramic"]:
+        for mode in ["train", "val", "val_mono", "test", "test_mono",
+                     "test_mono_glass", "test_mono_cutlery", "test_mono_can",
+                     "test_mono_bottle", "test_mono_cup", "test_mono_teapot",
+                     "test_mono_remote", "test_mono_box",
+                     "test_mono_table", "test_mono_wall"]:
             self.writers[mode] = SummaryWriter(os.path.join(self.log_path, mode))
 
         if not self.opt.no_ssim:
@@ -946,16 +950,59 @@ class Trainer:
             self.log("test_mono_glass", inputs, outputs, losses, log_images=False, log_essential_images=False, mono_depth=False)
 
             losses = {}
-            print("\nMONO DEPTH Test - METAL:")
-            self.compute_depth_losses_from_list(gts, preds_mono, losses, masks, "metal")
-            self.log("test_mono_metal", inputs, outputs, losses, log_images=False, log_essential_images=False,
+            print("\nMONO DEPTH Test - CUTLERY:")
+            self.compute_depth_losses_from_list(gts, preds_mono, losses, masks, "cutlery")
+            self.log("test_mono_cutlery", inputs, outputs, losses, log_images=False, log_essential_images=False,
                      mono_depth=False)
 
             losses = {}
-            print("\nMONO DEPTH Test - CERAMIC:")
-            self.compute_depth_losses_from_list(gts, preds_mono, losses, masks, "ceramic")
-            self.log("test_mono_ceramic", inputs, outputs, losses, log_images=False, log_essential_images=False,
+            print("\nMONO DEPTH Test - CAN:")
+            self.compute_depth_losses_from_list(gts, preds_mono, losses, masks, "can")
+            self.log("test_mono_can", inputs, outputs, losses, log_images=False, log_essential_images=False,
                      mono_depth=False)
+
+            losses = {}
+            print("\nMONO DEPTH Test - BOTTLE:")
+            self.compute_depth_losses_from_list(gts, preds_mono, losses, masks, "bottle")
+            self.log("test_mono_bottle", inputs, outputs, losses, log_images=False, log_essential_images=False,
+                     mono_depth=False)
+
+            losses = {}
+            print("\nMONO DEPTH Test - CUP:")
+            self.compute_depth_losses_from_list(gts, preds_mono, losses, masks, "cup")
+            self.log("test_mono_cup", inputs, outputs, losses, log_images=False, log_essential_images=False,
+                     mono_depth=False)
+
+            losses = {}
+            print("\nMONO DEPTH Test - TEAPOT:")
+            self.compute_depth_losses_from_list(gts, preds_mono, losses, masks, "teapot")
+            self.log("test_mono_teapot", inputs, outputs, losses, log_images=False, log_essential_images=False,
+                     mono_depth=False)
+
+            losses = {}
+            print("\nMONO DEPTH Test - REMOTE:")
+            self.compute_depth_losses_from_list(gts, preds_mono, losses, masks, "remote")
+            self.log("test_mono_remote", inputs, outputs, losses, log_images=False, log_essential_images=False,
+                     mono_depth=False)
+
+            losses = {}
+            print("\nMONO DEPTH Test - BOX:")
+            self.compute_depth_losses_from_list(gts, preds_mono, losses, masks, "box")
+            self.log("test_mono_box", inputs, outputs, losses, log_images=False, log_essential_images=False,
+                     mono_depth=False)
+
+            losses = {}
+            print("\nMONO DEPTH Test - TABLE:")
+            self.compute_depth_losses_from_list(gts, preds_mono, losses, masks, "table")
+            self.log("test_mono_table", inputs, outputs, losses, log_images=False, log_essential_images=False,
+                     mono_depth=False)
+
+            losses = {}
+            print("\nMONO DEPTH Test - WALL:")
+            self.compute_depth_losses_from_list(gts, preds_mono, losses, masks, "wall")
+            self.log("test_mono_wall", inputs, outputs, losses, log_images=False, log_essential_images=False,
+                     mono_depth=False)
+
 
     def generate_images_pred(self, inputs, outputs, is_multi=False):
         """Generate the warped (reprojected) color images for a minibatch.
@@ -1350,7 +1397,7 @@ class Trainer:
             for i, metric in enumerate(self.depth_metric_names):
                 losses[metric] = np.array(depth_errors[i].cpu())
 
-    def compute_depth_losses_from_list(self, gts, preds, losses, masks, material="all"):
+    def compute_depth_losses_from_list(self, gts, preds, losses, masks, object="all"):
         """Compute depth metrics, to allow monitoring during training
 
         This isn't particularly accurate as it averages over the entire batch,
@@ -1375,22 +1422,35 @@ class Trainer:
                 depth_gt = depth_gt_batch.detach()[:, 0].numpy()[b]
                 mask = np.logical_and(depth_gt > MIN_DEPTH, depth_gt < MAX_DEPTH)  # 320x480
 
-                if material == "all":
+                if object == "all":
                     depth_pred = depth_pred[mask]  # 1 dim array of non-zero values
                     depth_gt = depth_gt[mask]  # 1 dim array of non-zero values
 
                 else:
                     mask_gt = masks_batch.detach()[:, 0].numpy()[b]  # 320x480
 
-                    if material == "glass":
-                        mask_material = np.logical_and(mask_gt >= 160, mask_gt <= 160)
+                    if object == "box":
+                        threshold = 20
+                    elif object == "bottle":
+                        threshold = 40
+                    elif object == "can":
+                        threshold = 60
+                    elif object == "cup":
+                        threshold = 80
+                    elif object == "remote":
+                        threshold = 100
+                    elif object == "teapot":
+                        threshold = 120
+                    elif object == "cutlery":
+                        threshold = 140
+                    elif object == "glass":
+                        threshold = 160
+                    elif object == "table":
+                        threshold = 180
+                    elif object == "wall":
+                        threshold = 200
 
-                    elif material == "metal":
-                        mask_material = np.logical_and(mask_gt >= 140, mask_gt <= 140)
-
-                    elif material == "ceramic":
-                        mask_material = np.logical_and(mask_gt >= 120, mask_gt <= 120)
-
+                    mask_material = np.logical_and(mask_gt >= threshold, mask_gt <= threshold)
                     mask_final = np.logical_and(mask == 1, mask_material == 1)
                     depth_pred = depth_pred[mask_final]  # 1 dim array of non-zero values
                     depth_gt = depth_gt[mask_final]  # 1 dim array of non-zero values
@@ -1401,7 +1461,10 @@ class Trainer:
                 depth_pred[depth_pred < MIN_DEPTH] = MIN_DEPTH
                 depth_pred[depth_pred > MAX_DEPTH] = MAX_DEPTH
 
-                depth_errors = compute_depth_errors_numpy(depth_gt, depth_pred)
+                try:
+                    depth_errors = compute_depth_errors_numpy(depth_gt, depth_pred)
+                except Exception:
+                    pass
 
                 errors.append(depth_errors)
 
