@@ -49,6 +49,7 @@ class ResidualBlock(nn.Module):
         out = self.conv2(out)
         return out + x
 
+# not part of architecture1++
 class XOLPEncoder(nn.Module):
     def __init__(self, dropout_rate, in_channels = 2):
         super(XOLPEncoder, self).__init__()
@@ -88,6 +89,7 @@ class XOLPEncoder(nn.Module):
         # todo: either implement or get from dataloader
         return torch.rand(2,2,320,480)
 
+# not part of architecture1++
 class NormalsEncoder(nn.Module):
     def __init__(self, dropout_rate, in_channels = 9):
         super(NormalsEncoder, self).__init__()
@@ -143,9 +145,9 @@ class ShallowEncoder(nn.Module):
         self.Conv1 = ConvBlock(self.in_channels,64,7,'stride2',3,dropout_rate)
         # self.Maxpool1 = nn.MaxPool2d(2)
         self.ResBlock1 = ResidualBlock(64,3,1,dropout_rate)
-        self.Conv2 = ConvBlock(64,64,5,'stride2',2,dropout_rate)
+        self.Conv2 = ConvBlock(64,64,5,'maxpool',2,dropout_rate)
         self.ResBlock2 = ResidualBlock(64,3,1,dropout_rate)
-        self.Conv3 = ConvBlock(64,64,5,'stride2',2,dropout_rate)
+        self.Conv3 = ConvBlock(64,64,5,'maxpool',2,dropout_rate)
         self.ResBlock3 = ResidualBlock(64,3,1,dropout_rate)
 
     def forward(self, input):
@@ -213,15 +215,12 @@ class JointEncoder(nn.Module):
         self.fc2 = ConvBlock(256,128,1,'none',0,dropout_rate)
         self.ResBlock1 = ResidualBlock(128,3,1,dropout_rate)
         self.ResBlock2 = ResidualBlock(128,3,1,dropout_rate)
-        self.ResBlock3 = ResidualBlock(128,3,1,dropout_rate)
-        self.Conv1 = ConvBlock(128,256,5,'stride2',2,dropout_rate)
+        self.Conv1 = ConvBlock(128,256,5,'maxpool',2,dropout_rate)
+        self.ResBlock3 = ResidualBlock(256,3,1,dropout_rate)
         self.ResBlock4 = ResidualBlock(256,3,1,dropout_rate)
-        self.ResBlock5 = ResidualBlock(256,3,1,dropout_rate)
-        self.ResBlock6 = ResidualBlock(256,3,1,dropout_rate)
-        self.Conv2 = ConvBlock(256,512,5,'stride2',2,dropout_rate)
-        self.ResBlock7 = ResidualBlock(512,3,1,dropout_rate)
-        self.ResBlock8 = ResidualBlock(512,3,1,dropout_rate)
-        self.ResBlock9 = ResidualBlock(512,3,1,dropout_rate)
+        self.Conv2 = ConvBlock(256,512,5,'maxpool',2,dropout_rate)
+        self.ResBlock5 = ResidualBlock(512,3,1,dropout_rate)
+        self.ResBlock6 = ResidualBlock(512,3,1,dropout_rate)
 
     def forward(self,rgb_feats,xolp_feats,normals_feats):
         ## Input:
@@ -235,16 +234,13 @@ class JointEncoder(nn.Module):
         feats = self.fc2(feats)
         feats = self.ResBlock1(feats)
         feats = self.ResBlock2(feats)
-        feats = self.ResBlock3(feats)
         feats = self.Conv1(feats)
+        feats = self.ResBlock3(feats)
         feats = self.ResBlock4(feats)
-        feats = self.ResBlock5(feats)
-        feats = self.ResBlock6(feats)
         out.append(feats) # (256,20,30)
         feats = self.Conv2(feats)
-        feats = self.ResBlock7(feats)
-        feats = self.ResBlock8(feats)
-        feats = self.ResBlock9(feats)
+        feats = self.ResBlock5(feats)
+        feats = self.ResBlock6(feats)
         out.append(feats) # (512,10,15)
         return out
 
