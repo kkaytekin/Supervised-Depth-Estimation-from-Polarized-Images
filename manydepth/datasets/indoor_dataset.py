@@ -88,6 +88,7 @@ class IndoorDataset(data.Dataset):
             self.frame_idxs = frame_idxs
 
         self.is_train = is_train
+        self.enable_12channels = False  # if True, inputs "color_aug" include 4 concatenated polarised images (12 channels)
 
         self.loader = pil_loader
         self.to_tensor = transforms.ToTensor()
@@ -221,45 +222,43 @@ class IndoorDataset(data.Dataset):
                         aug = f
                     inputs[(n + "_aug", im, i)] = self.to_tensor(aug)
 
-        # flag start here
-        list0 = []
-        list1 = []
-        list2 = []
-        list3 = []
-        for k in list(inputs):
-            if "pol00" in k or "pol10" in k or "pol01" in k or "pol11" in k:
-                n, im, i = k
-                if do_color_aug:
-                    if i == 0:
-                        list0.append(self.to_tensor(color_aug(inputs[(n, im, i)])))
-                    if i == 1:
-                        list1.append(self.to_tensor(color_aug(inputs[(n, im, i)])))
-                    if i == 2:
-                        list2.append(self.to_tensor(color_aug(inputs[(n, im, i)])))
-                    if i == 3:
-                        list3.append(self.to_tensor(color_aug(inputs[(n, im, i)])))
-                else:
-                    if i == 0:
-                        list0.append(self.to_tensor(inputs[(n, im, i)]))
-                    if i == 1:
-                        list1.append(self.to_tensor(inputs[(n, im, i)]))
-                    if i == 2:
-                        list2.append(self.to_tensor(inputs[(n, im, i)]))
-                    if i == 3:
-                        list3.append(self.to_tensor(inputs[(n, im, i)]))
+        if self.enable_12channels:
+            list0 = []
+            list1 = []
+            list2 = []
+            list3 = []
+            for k in list(inputs):
+                if "pol00" in k or "pol10" in k or "pol01" in k or "pol11" in k:
+                    n, im, i = k
+                    if do_color_aug:
+                        if i == 0:
+                            list0.append(self.to_tensor(color_aug(inputs[(n, im, i)])))
+                        if i == 1:
+                            list1.append(self.to_tensor(color_aug(inputs[(n, im, i)])))
+                        if i == 2:
+                            list2.append(self.to_tensor(color_aug(inputs[(n, im, i)])))
+                        if i == 3:
+                            list3.append(self.to_tensor(color_aug(inputs[(n, im, i)])))
+                    else:
+                        if i == 0:
+                            list0.append(self.to_tensor(inputs[(n, im, i)]))
+                        if i == 1:
+                            list1.append(self.to_tensor(inputs[(n, im, i)]))
+                        if i == 2:
+                            list2.append(self.to_tensor(inputs[(n, im, i)]))
+                        if i == 3:
+                            list3.append(self.to_tensor(inputs[(n, im, i)]))
 
-        inputs[("color_aug", 0, 0)] = torch.cat(list0, dim=0)
-        inputs[("color_aug", 0, 1)] = torch.cat(list1, dim=0)
-        inputs[("color_aug", 0, 2)] = torch.cat(list2, dim=0)
-        inputs[("color_aug", 0, 3)] = torch.cat(list3, dim=0)
+            inputs[("color_aug", 0, 0)] = torch.cat(list0, dim=0)
+            inputs[("color_aug", 0, 1)] = torch.cat(list1, dim=0)
+            inputs[("color_aug", 0, 2)] = torch.cat(list2, dim=0)
+            inputs[("color_aug", 0, 3)] = torch.cat(list3, dim=0)
 
-        for i in range(self.num_scales):  # assuming there's only 0 image
-            del inputs["pol00", 0, i]
-            del inputs["pol01", 0, i]
-            del inputs["pol10", 0, i]
-            del inputs["pol11", 0, i]
-
-        # flag finish here
+            for i in range(self.num_scales):  # assuming there's only 0 image
+                del inputs["pol00", 0, i]
+                del inputs["pol01", 0, i]
+                del inputs["pol10", 0, i]
+                del inputs["pol11", 0, i]
 
     def __len__(self):
         return len(self.filenames)
@@ -325,19 +324,18 @@ class IndoorDataset(data.Dataset):
                             inputs[("color", i, -1)] = self.get_color(
                                 folder, frame_index + i * self.frame_offset, None, do_flip, self.input_lookup)
 
-                            # flag start here
-                            inputs[("pol00", i, -1)] = self.get_color(
-                                folder, frame_index + i * self.frame_offset, None, do_flip, "pol00")
+                            if self.enable_12channels:
+                                inputs[("pol00", i, -1)] = self.get_color(
+                                    folder, frame_index + i * self.frame_offset, None, do_flip, "pol00")
 
-                            inputs[("pol10", i, -1)] = self.get_color(
-                                folder, frame_index + i * self.frame_offset, None, do_flip, "pol10")
+                                inputs[("pol10", i, -1)] = self.get_color(
+                                    folder, frame_index + i * self.frame_offset, None, do_flip, "pol10")
 
-                            inputs[("pol01", i, -1)] = self.get_color(
-                                folder, frame_index + i * self.frame_offset, None, do_flip, "pol01")
+                                inputs[("pol01", i, -1)] = self.get_color(
+                                    folder, frame_index + i * self.frame_offset, None, do_flip, "pol01")
 
-                            inputs[("pol11", i, -1)] = self.get_color(
-                                folder, frame_index + i * self.frame_offset, None, do_flip, "pol11")
-                            # flag finish here
+                                inputs[("pol11", i, -1)] = self.get_color(
+                                    folder, frame_index + i * self.frame_offset, None, do_flip, "pol11")
 
                             pol00_gray = self.get_gray(
                                 folder, frame_index + i * self.frame_offset, None, do_flip, "pol00")
@@ -416,18 +414,18 @@ class IndoorDataset(data.Dataset):
             for i in self.frame_idxs:  # i=0
                 del inputs[("color", i, -1)]
                 del inputs[("color_aug", i, -1)]
-                del inputs[("pol00", i, -1)]
-                del inputs[("pol10", i, -1)]
-                del inputs[("pol01", i, -1)]
-                del inputs[("pol11", i, -1)]
+                if self.enable_12channels:
+                    del inputs[("pol00", i, -1)]
+                    del inputs[("pol10", i, -1)]
+                    del inputs[("pol01", i, -1)]
+                    del inputs[("pol11", i, -1)]
 
             for i in self.frame_idxs:
                 self.get_xolp(inputs, i)
-
-                inputs[("pol00_gray", i, 0)] = self.to_tensor(inputs[("pol00_gray", i, 0)])
-                inputs[("pol10_gray", i, 0)] = self.to_tensor(inputs[("pol10_gray", i, 0)])
-                inputs[("pol01_gray", i, 0)] = self.to_tensor(inputs[("pol01_gray", i, 0)])
-                inputs[("pol11_gray", i, 0)] = self.to_tensor(inputs[("pol11_gray", i, 0)])
+                del inputs[("pol00_gray", i, 0)]
+                del inputs[("pol10_gray", i, 0)]
+                del inputs[("pol01_gray", i, 0)]
+                del inputs[("pol11_gray", i, 0)]
 
             return inputs
         except:
