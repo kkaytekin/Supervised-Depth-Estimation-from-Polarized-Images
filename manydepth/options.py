@@ -237,6 +237,10 @@ class MonodepthOptions:
                                  default=20,
                                  help="Sets the epoch number at which to freeze the teacher"
                                       "network and the pose network.")
+        self.parser.add_argument("--normals_loss_weight",
+                                 type=float,
+                                 default=0.35,
+                                 help="Sets the weight of the normals loss")
 
         # ABLATION options
         self.parser.add_argument("--v1_multiscale",

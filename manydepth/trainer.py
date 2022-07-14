@@ -1281,7 +1281,7 @@ class Trainer:
 
                 losses['supervised_depth_loss/{}'.format(scale)] = supervised_depth_loss
                 loss += supervised_depth_loss
-                loss += (0.35 * supervised_normals_loss)
+                loss += (self.opt.normals_loss_weight * supervised_normals_loss)
             else:
                 losses['supervised_depth_loss/{}'.format(scale)] = 0.
 
