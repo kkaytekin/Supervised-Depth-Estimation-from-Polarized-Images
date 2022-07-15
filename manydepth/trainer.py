@@ -211,6 +211,11 @@ class Trainer:
             self.models["joint_encoder"].to(self.device)
             self.parameters_to_train += list(self.models["joint_encoder"].parameters())
 
+            if self.opt.normals_decoder:
+                self.models["normals_decoder"] = networks.NormalsDecoder(dropout_rate=self.opt.dropout_rate)
+                self.models["normals_decoder"].to(self.device)
+                self.parameters_to_train += list(self.models["normals_decoder"].parameters())
+
             self.models["mono_depth"] = \
                 networks.DepthDecoder(self.models["rgb_encoder"].num_ch_enc, self.opt.scales)
             self.models["mono_depth"].to(self.device)
@@ -512,6 +517,8 @@ class Trainer:
                 feats.extend(enc_feats)
                 mono_outputs.update(self.models['mono_depth'](feats))
 
+                outputs["normals_pred"] = self.models["normals_decoder"](normals_feats)
+
         else:
             with torch.no_grad():
                 rgb_feats = self.models["rgb_encoder"](inputs["color_aug", 0, 0].float())
@@ -525,6 +532,8 @@ class Trainer:
                 enc_feats = self.models["joint_encoder"](rgb_feats[-1],xolp_feats,normals_feats)
                 feats.extend(enc_feats)
                 mono_outputs.update(self.models['mono_depth'](feats))
+
+                outputs["normals_pred"] = self.models["normals_decoder"](normals_feats)
 
         if not self.opt.depth_supervision_only:
             self.generate_images_pred(inputs, mono_outputs)
@@ -819,6 +828,8 @@ class Trainer:
                     enc_feats = self.models["joint_encoder"](rgb_feats[-1],xolp_feats,normals_feats)
                     feats.extend(enc_feats)
                     mono_outputs.update(self.models['mono_depth'](feats))
+
+                    outputs["normals_pred"] = self.models["normals_decoder"](normals_feats)
 
                 if not self.opt.depth_supervision_only:
                     if self.opt.train_student:
@@ -1250,6 +1261,10 @@ class Trainer:
                 losses['supervised_depth_loss/{}'.format(scale)] = supervised_depth_loss
                 loss += supervised_depth_loss
                 loss += (self.opt.normals_loss_weight * supervised_normals_loss)
+
+                if self.opt.normals_decoder:
+                    normals_decoder_loss = self.compute_normals_decoder_losses(inputs[("depth")], outputs["normals_pred"], inputs[("K", 0)], mask)
+                    loss += self.opt.normals_dec_loss_weight * normals_decoder_loss
             else:
                 losses['supervised_depth_loss/{}'.format(scale)] = 0.
 
@@ -1304,6 +1319,14 @@ class Trainer:
         depth_pred = depth_pred  # expected Bx1xHxW
         normals_gt = depth_to_normals(depth_gt, camera_matrix)  # expected Bx3xHxW
         normals_pred = depth_to_normals(depth_pred, camera_matrix)  # expected Bx3xHxW
+        cos_sim = F.cosine_similarity(normals_gt, normals_pred, dim=1).unsqueeze(1).to(self.device)  # expected Bx1xHxW, there are some negative values
+        normals_loss = (((2 * torch.ones(cos_sim.shape)).to(self.device) - cos_sim) * mask).sum() / mask.sum()
+        return normals_loss
+
+    def compute_normals_decoder_losses(self, depth_gt, normals_pred, intrinsics, mask):
+        camera_matrix = intrinsics[:, :3, :3]  # expected Bx3x3
+        depth_gt = depth_gt # expected Bx1xHxW
+        normals_gt = depth_to_normals(depth_gt, camera_matrix)  # expected Bx3xHxW
         cos_sim = F.cosine_similarity(normals_gt, normals_pred, dim=1).unsqueeze(1).to(self.device)  # expected Bx1xHxW, there are some negative values
         normals_loss = (((2 * torch.ones(cos_sim.shape)).to(self.device) - cos_sim) * mask).sum() / mask.sum()
         return normals_loss

@@ -244,6 +244,10 @@ class MonodepthOptions:
                                  type=float,
                                  default=0.35,
                                  help="Sets the weight of the normals loss")
+        self.parser.add_argument("--normals_dec_loss_weight",
+                         type=float,
+                         default=0.35,
+                         help="Sets the weight of the 2nd normals loss(using depth_decoder output)")
 
         # ABLATION options
         self.parser.add_argument("--v1_multiscale",
@@ -291,6 +295,10 @@ class MonodepthOptions:
                                  type = float,
                                  help = "Dropout rate for the encoders. ", # todo: add dropout for decoder as well?
                                  default = 0.1)
+        self.parser.add_argument("--normals_decoder",
+                                 help="Add a normals decoder, which predicts normals from normals encoder features, "
+                                      "also calculate the normals loss from these predictions. ",
+                                 action = "store_true")
 
         # SYSTEM options
         self.parser.add_argument("--no_cuda",
