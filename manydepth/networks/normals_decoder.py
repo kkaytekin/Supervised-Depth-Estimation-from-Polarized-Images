@@ -1,7 +1,7 @@
 import torch.nn as nn
 
 from manydepth.layers import upsample
-from pre_encoders import ConvBlock, ResidualBlock
+from manydepth.networks.pre_encoders import ConvBlock, ResidualBlock
 
 class NormalsDecoder(nn.Module):
     def __init__(self, dropout_rate = 0.0):

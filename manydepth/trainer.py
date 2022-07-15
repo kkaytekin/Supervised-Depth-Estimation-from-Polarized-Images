@@ -518,6 +518,7 @@ class Trainer:
                 mono_outputs.update(self.models['mono_depth'](feats))
 
                 outputs["normals_pred"] = self.models["normals_decoder"](normals_feats)
+                mono_outputs["normals_pred"] = self.models["normals_decoder"](normals_feats)
 
         else:
             with torch.no_grad():
@@ -534,6 +535,7 @@ class Trainer:
                 mono_outputs.update(self.models['mono_depth'](feats))
 
                 outputs["normals_pred"] = self.models["normals_decoder"](normals_feats)
+                mono_outputs["normals_pred"] = self.models["normals_decoder"](normals_feats)
 
         if not self.opt.depth_supervision_only:
             self.generate_images_pred(inputs, mono_outputs)
@@ -830,6 +832,7 @@ class Trainer:
                     mono_outputs.update(self.models['mono_depth'](feats))
 
                     outputs["normals_pred"] = self.models["normals_decoder"](normals_feats)
+                    mono_outputs["normals_pred"] = self.models["normals_decoder"](normals_feats)
 
                 if not self.opt.depth_supervision_only:
                     if self.opt.train_student:
