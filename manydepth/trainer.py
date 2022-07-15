@@ -181,34 +181,8 @@ class Trainer:
                         batch_size=self.opt.batch_size)
                     self.models["encoder"].to(self.device)
 
-                    if self.opt.augment_normals and self.opt.augment_xolp:
-                        self.models["normals_encoder"] = networks.NormalsEncoder(dropout_rate=.1)
-                        self.models["normals_encoder"].to(self.device)
-                        self.parameters_to_train += list(self.models["normals_encoder"].parameters())
-
-                        self.models["xolp_encoder"] = networks.XOLPEncoder(dropout_rate=.1)
-                        self.models["xolp_encoder"].to(self.device)
-                        self.parameters_to_train += list(self.models["xolp_encoder"].parameters())
-
-                        self.models["depth"] = networks.DepthDecoder(
-                            self.models["encoder"].num_ch_enc, self.opt.scales, augment_normals=True, augment_xolp=True)
-                    elif self.opt.augment_normals:
-                        self.models["normals_encoder"] = networks.NormalsEncoder(dropout_rate=.1)
-                        self.models["normals_encoder"].to(self.device)
-                        self.parameters_to_train += list(self.models["normals_encoder"].parameters())
-
-                        self.models["depth"] = networks.DepthDecoder(
-                            self.models["encoder"].num_ch_enc, self.opt.scales, augment_normals=True)
-                    elif self.opt.augment_xolp:
-                        self.models["xolp_encoder"] = networks.XOLPEncoder(dropout_rate=.1)
-                        self.models["xolp_encoder"].to(self.device)
-                        self.parameters_to_train += list(self.models["xolp_encoder"].parameters())
-
-                        self.models["depth"] = networks.DepthDecoder(
-                            self.models["encoder"].num_ch_enc, self.opt.scales, augment_xolp=True)
-                    else:
-                        self.models["depth"] = networks.DepthDecoder(
-                            self.models["encoder"].num_ch_enc, self.opt.scales)
+                    self.models["depth"] = networks.DepthDecoder(
+                        self.models["encoder"].num_ch_enc, self.opt.scales)
                     self.models["depth"].to(self.device)
 
                     self.parameters_to_train += list(self.models["encoder"].parameters())
@@ -217,19 +191,23 @@ class Trainer:
             # Initialize pre-encoders
             self.models["rgb_encoder"] = \
                 networks.ShallowResnetEncoder(18, self.opt.weights_init == "pretrained")
-            self.models["normals_encoder"] = networks.ShallowNormalsEncoder(in_channels = 9,
-                                                                     dropout_rate = self.opt.dropout_rate)
-            self.models["xolp_encoder"] = networks.ShallowEncoder(mode = 'XOLP',
-                                                                     in_channels = 2,
-                                                                     dropout_rate = self.opt.dropout_rate)
-            self.models["joint_encoder"] = networks.JointEncoder(dropout_rate=self.opt.dropout_rate)
+
+            if self.opt.augment_normals:
+                self.models["normals_encoder"] = networks.ShallowNormalsEncoder(in_channels = 9,
+                                                                         dropout_rate = self.opt.dropout_rate)
+                self.models["normals_encoder"].to(self.device)
+                self.parameters_to_train += list(self.models["normals_encoder"].parameters())
+            if self.opt.augment_xolp:
+                self.models["xolp_encoder"] = networks.ShallowEncoder(mode = 'XOLP',
+                                                                         in_channels = 2,
+                                                                         dropout_rate = self.opt.dropout_rate)
+                self.models["xolp_encoder"].to(self.device)
+                self.parameters_to_train += list(self.models["xolp_encoder"].parameters())
+
+            self.models["joint_encoder"] = networks.JointEncoder(dropout_rate=self.opt.dropout_rate,
+                                                                 include_normals=self.opt.augment_normals,
+                                                                 include_xolp=self.opt.augment_xolp)
             self.models["rgb_encoder"].to(self.device)
-            # if not self.opt.freeze_rgb_encoder: # note: possible bug: if call arg: train_teacher_and_pose is not true, rgb_encoder is not trained
-            #     self.parameters_to_train += list(self.models["rgb_encoder"].parameters())
-            self.models["normals_encoder"].to(self.device)
-            self.parameters_to_train += list(self.models["normals_encoder"].parameters())
-            self.models["xolp_encoder"].to(self.device)
-            self.parameters_to_train += list(self.models["xolp_encoder"].parameters())
             self.models["joint_encoder"].to(self.device)
             self.parameters_to_train += list(self.models["joint_encoder"].parameters())
 
@@ -524,8 +502,12 @@ class Trainer:
             else:
                 rgb_feats = self.models["rgb_encoder"](inputs["color_aug", 0, 0].float())
                 feats = rgb_feats
-                xolp_feats = self.models["xolp_encoder"](inputs["xolp", 0, 0].float())
-                normals_feats = self.models["normals_encoder"](inputs["xolp", 0, 0].float())
+                xolp_feats = None
+                normals_feats = None
+                if self.opt.augment_xolp:
+                    xolp_feats = self.models["xolp_encoder"](inputs["xolp", 0, 0].float())
+                if self.opt.augment_normals:
+                    normals_feats = self.models["normals_encoder"](inputs["xolp", 0, 0].float())
                 enc_feats = self.models["joint_encoder"](rgb_feats[-1],xolp_feats,normals_feats)
                 feats.extend(enc_feats)
                 mono_outputs.update(self.models['mono_depth'](feats))
@@ -534,8 +516,12 @@ class Trainer:
             with torch.no_grad():
                 rgb_feats = self.models["rgb_encoder"](inputs["color_aug", 0, 0].float())
                 feats = rgb_feats
-                xolp_feats = self.models["xolp_encoder"](inputs["xolp", 0, 0].float())
-                normals_feats = self.models["normals_encoder"](inputs["xolp", 0, 0].float())
+                xolp_feats = None
+                normals_feats = None
+                if self.opt.augment_xolp:
+                    xolp_feats = self.models["xolp_encoder"](inputs["xolp", 0, 0].float())
+                if self.opt.augment_normals:
+                    normals_feats = self.models["normals_encoder"](inputs["xolp", 0, 0].float())
                 enc_feats = self.models["joint_encoder"](rgb_feats[-1],xolp_feats,normals_feats)
                 feats.extend(enc_feats)
                 mono_outputs.update(self.models['mono_depth'](feats))
@@ -824,8 +810,12 @@ class Trainer:
 
                     rgb_feats = self.models["rgb_encoder"](inputs["color_aug", 0, 0].float())
                     feats = rgb_feats
-                    xolp_feats = self.models["xolp_encoder"](inputs["xolp", 0, 0].float())
-                    normals_feats = self.models["normals_encoder"](inputs["xolp", 0, 0].float())
+                    xolp_feats = None
+                    normals_feats = None
+                    if self.opt.augment_xolp:
+                        xolp_feats = self.models["xolp_encoder"](inputs["xolp", 0, 0].float())
+                    if self.opt.augment_normals:
+                        normals_feats = self.models["normals_encoder"](inputs["xolp", 0, 0].float())
                     enc_feats = self.models["joint_encoder"](rgb_feats[-1],xolp_feats,normals_feats)
                     feats.extend(enc_feats)
                     mono_outputs.update(self.models['mono_depth'](feats))

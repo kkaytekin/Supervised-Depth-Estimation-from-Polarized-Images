@@ -209,9 +209,15 @@ class ShallowNormalsEncoder(ShallowEncoder):
         return N_cat
 
 class JointEncoder(nn.Module):
-    def __init__(self, dropout_rate = 0.0):
+    def __init__(self, dropout_rate = 0.0, include_normals=True,
+                 include_xolp=True):
         super(JointEncoder, self).__init__()
-        self.fc1 = ConvBlock(256,256,1,'none',0,dropout_rate)
+        additional_ch = 0
+        if include_normals:
+            additional_ch += 64
+        if include_xolp:
+            additional_ch += 64
+        self.fc1 = ConvBlock(128+additional_ch,256,1,'none',0,dropout_rate)
         self.fc2 = ConvBlock(256,128,1,'none',0,dropout_rate)
         self.ResBlock1 = ResidualBlock(128,3,1,dropout_rate)
         self.ResBlock2 = ResidualBlock(128,3,1,dropout_rate)
@@ -222,14 +228,22 @@ class JointEncoder(nn.Module):
         self.ResBlock5 = ResidualBlock(512,3,1,dropout_rate)
         self.ResBlock6 = ResidualBlock(512,3,1,dropout_rate)
 
-    def forward(self,rgb_feats,xolp_feats,normals_feats):
+    def forward(self,rgb_feats,xolp_feats=None,normals_feats=None):
         ## Input:
         # rgb_feats: (B,128,40,60),
         # xolp_feats: (B,64,40,60),
         # normals_feats: (B,64,40,60)
         out = []
-
-        feats = torch.cat((rgb_feats,xolp_feats,normals_feats), dim = 1)
+        if xolp_feats == None:
+            if normals_feats == None:
+                feats = rgb_feats
+            else:
+                feats = torch.cat((rgb_feats,normals_feats), dim = 1)
+        else:
+            if normals_feats == None:
+                feats = torch.cat((rgb_feats,xolp_feats), dim = 1)
+            else:
+                feats = torch.cat((rgb_feats,xolp_feats,normals_feats), dim = 1)
         feats = self.fc1(feats)
         feats = self.fc2(feats)
         feats = self.ResBlock1(feats)
