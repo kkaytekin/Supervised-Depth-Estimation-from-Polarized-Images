@@ -5,6 +5,8 @@ import numpy as np
 import torch
 import torch.nn as nn
 
+from .transunet.transunet import AttentionModule
+
 class ConvBlock(nn.Module):
     """Layer to perform a convolution followed by ReLU
     """
@@ -122,16 +124,22 @@ class JointEncoder(nn.Module):
             additional_ch += 64
         if include_xolp:
             additional_ch += 64
-        self.fc1 = ConvBlock(128 + additional_ch, 256, 1, 'none', 0, dropout_rate)
-        self.fc2 = ConvBlock(256, 128, 1, 'none', 0, dropout_rate)
-        self.ResBlock1 = ResidualBlock(128, 3, 1, dropout_rate)
-        self.ResBlock2 = ResidualBlock(128, 3, 1, dropout_rate)
-        self.Conv1 = ConvBlock(128, 256, 5, 'maxpool', 2, dropout_rate)
-        self.ResBlock3 = ResidualBlock(256, 3, 1, dropout_rate)
-        self.ResBlock4 = ResidualBlock(256, 3, 1, dropout_rate)
-        self.Conv2 = ConvBlock(256, 512, 5, 'maxpool', 2, dropout_rate)
-        self.ResBlock5 = ResidualBlock(512, 3, 1, dropout_rate)
-        self.ResBlock6 = ResidualBlock(512, 3, 1, dropout_rate)
+
+        self.fc1 = ConvBlock(128+additional_ch,256,1,'none',0,dropout_rate)
+        self.fc2 = ConvBlock(256,128,1,'none',0,dropout_rate)
+        # Instead of 1x1 conv, use attention to fuse encoder features
+        self.AttentionBlock = AttentionModule(residual_num=4,
+                                              dim=128,
+                                              dropout=dropout_rate,
+                                              skip_res=False)
+        # self.ResBlock1 = ResidualBlock(128,3,1,dropout_rate)
+        # self.ResBlock2 = ResidualBlock(128,3,1,dropout_rate)
+        self.Conv1 = ConvBlock(128,256,5,'maxpool',2,dropout_rate)
+        self.ResBlock3 = ResidualBlock(256,3,1,dropout_rate)
+        self.ResBlock4 = ResidualBlock(256,3,1,dropout_rate)
+        self.Conv2 = ConvBlock(256,512,5,'maxpool',2,dropout_rate)
+        self.ResBlock5 = ResidualBlock(512,3,1,dropout_rate)
+        self.ResBlock6 = ResidualBlock(512,3,1,dropout_rate)
 
     def forward(self, rgb_feats, xolp_feats=None, normals_feats=None):
         # Input:
@@ -151,8 +159,9 @@ class JointEncoder(nn.Module):
                 feats = torch.cat((rgb_feats, xolp_feats, normals_feats), dim=1)
         feats = self.fc1(feats)
         feats = self.fc2(feats)
-        feats = self.ResBlock1(feats)
-        feats = self.ResBlock2(feats)
+        feats = self.AttentionBlock(feats)
+        # feats = self.ResBlock1(feats)
+        # feats = self.ResBlock2(feats)
         feats = self.Conv1(feats)
         feats = self.ResBlock3(feats)
         feats = self.ResBlock4(feats)
