@@ -127,8 +127,8 @@ class JointEncoder(nn.Module):
 
         self.fc1 = ConvBlock(128+additional_ch,256,1,'none',0,dropout_rate)
         self.fc2 = ConvBlock(256,128,1,'none',0,dropout_rate)
-        # Instead of 1x1 conv, use attention to fuse encoder features
-        self.AttentionBlock = AttentionModule(residual_num=4,
+        # After 1x1 conv, use attention to fuse encoder features
+        self.AttentionBlock = AttentionModule(residual_num=1,
                                               dim=128,
                                               dropout=dropout_rate,
                                               skip_res=False)

@@ -151,27 +151,23 @@ class TransUnet(nn.Module):
         logits = self.outc(x)
         return logits
 
+# This is the attention module we use in our depth from polarization architecture
 class AttentionModule(nn.Module):
     def __init__(self,residual_num,dim,dropout,skip_res):
         self.skip_res = skip_res
         super(AttentionModule, self).__init__()
         self.resblock_layers = nn.ModuleList([])
 
-        # Missing positinal encoding
         for i in range(residual_num):
             self.resblock_layers.append(Block(dim, dropout=dropout))
 
     def forward(self,x):
         b, c, h, w = x.size()
-        x5 = torch.reshape(x, [b, c, h*w]).permute(0,2,1)
-        # print(x5.size())
+        x = torch.reshape(x, [b, c, h*w]).permute(0,2,1)
         for resblock in self.resblock_layers:
             residual = resblock(x)
             if self.skip_res:
-                # print("residual", residual[0,0,0])
-                # import ipdb; ipdb.set_trace()
                 x = residual
-                # print("x5", x5[0,0,0])
             else:
                 x = x + residual
         x = torch.reshape(x.permute(0,2,1), [b, c, h, w])
