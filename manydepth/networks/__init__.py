@@ -3,4 +3,4 @@ from .resnet_encoder import ResnetEncoder, ResnetEncoderMatching, ShallowResnetE
 from .depth_decoder import DepthDecoder
 from .pose_decoder import PoseDecoder
 from .pose_cnn import PoseCNN
-from .pre_encoders import NormalsEncoder, XOLPEncoder, ShallowEncoder, JointEncoder, ShallowNormalsEncoder
+from .pre_encoders import ShallowEncoder, JointEncoder, ShallowNormalsEncoder
