@@ -1,6 +1,75 @@
-# Depthfrompol
+# Depthfrompol (README TEMPLATE BELOW)
 
 
+***
+
+## 3D Pointcloud Demonstration
+
+### Description
+The example scene used for the pointcloud here is defined in the 
+"HAMMER_pointcloud/test_files.txt" file. 
+The possible scenes from HAMMER Dataset are:
+ - scene12_traj2_2
+ - scene13_traj2_1
+ - scene14_traj2_1
+
+Use one scene only per run to ensure you get the pointcloud for that scene only.
+ 
+### Installation
+Libraries "PIL.Image" and "open3d" need to be installed to your environment additionally to the built-in Python methods used.
+Make sure "manydepth" environment is activated by "conda activate manydepth" before running.
+
+### Usage
+Running the script by the following commands in terminal allows to see the pointclouds for each architecture version for
+predicted and ground truth depth (first one is RGB only) :
+
+ - python3 eval_pointcloud_main.py 
+ - python3 eval_pointcloud_main.py --use_xolp True
+ - python3 eval_pointcloud_main.py --use_normals True
+ - python3 eval_pointcloud_main.py --use_xolp True --use_normals True 
+
+
+ - see the TODO's in the "eval_pointcloud.py" for further details
+
+### Support
+For questions refer to "ge64jaq@tum.de"
+
+### Contributing
+Training a network solely based on "nearest" interpolation for image scaling may help reduce the pixels at object boundaries.
+
+***
+
+## 2D Depth Value "AR" Demonstration
+
+### Description
+The example scene used for the demo here is the Scene12_traj2_2 from HAMMER Dataset
+
+### Visuals
+![](ar_visualization/output/depth_check.gif)
+
+### Installation
+Libraries "PIL.Image" and "cv2" need to be installed to your environment additionally to the built-in Python methods used 
+Make sure "manydepth" environment is activated by "conda activate manydepth" before running.
+
+### Usage
+Basically getting the required images (depth_gt, depth_prediction, rgb_img and object_mask) in the data folder for an another scene is sufficient. 
+This can be done easily by copying the images saved in "pointcloud/data/images" after the inference.
+Afterwards the paths are be defined at the start of the main script for the new scene.
+
+It is important to have the depth images in "uint8" format!
+
+By running the main script you should be able to get a new gif with the predefined one directional trajectory. Some additional adjustments might be needed to get a reasonable gif. See the TODO's in the code.
+
+ - python3 main.py
+
+The resulting gif can be opened with the in-built ubuntu image viewers. 
+
+### Support
+For questions refer to "ge64jaq@tum.de"
+
+***
+
+## TEMPLATE 
 
 ## Getting started
 
