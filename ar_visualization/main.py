@@ -1,8 +1,12 @@
+import os
+import sys
+sys.path.insert(0, '..')
+
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 import numpy as np
 import datetime
-import os
+
 from PIL import Image
 import cv2
 
@@ -82,7 +86,7 @@ def rescale_image(image_path, scale=0.5, show=False):
     img_scale_down = cv2.resize(img, (0, 0), fx=scale, fy=scale)
     if show:
         cv2.imshow('Downscaled Image', img_scale_down)
-    cv2.waitKey(0)
+    #cv2.waitKey(0)
     return img_scale_down
 
 def ar_mask_init(y_pos, x_pos, logo_pixel_height=100, scale_factor=1.0, show=False):
@@ -227,10 +231,11 @@ if __name__ == "__main__":
              y_start=225, x_start=260,
              pixel_movement_y=0, pixel_movement_x=3,
              logo_pixel_height=15, scale_factor=1.3,
-             show=True)
+             show=False)
 
     make_ar_gif(images)
 
+    print("Your gif is ready in the output folder!")
 
 
 
