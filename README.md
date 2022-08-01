@@ -1,8 +1,39 @@
-# Depthfrompol
+# Depth from Polarization
 
 
 
-## Getting started
+## Introduction
+
+todo: add a gif from demonstration, or an attractive image representing depth from polarization.
+
+Welcome to our project repository! Since we have different versions of our architecture, 
+we assigned a different branch for each version. To use a specific version, simply check 
+out to the corresponding branch of the architecture.
+
+
+## Branches
+
+| Branch  | Architecture                         | Information                                                                                                                                                   |
+|---------|--------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `main`    | Final architecture                   | The architecture we present as our final. This is the architecture we ran our ablation studies.                                                               |
+| `attention` | Best quantitative results on objects | This architecture enhances the main architecture with use of attention after combining modalities                                                             |
+| `separate_normals_decoder`| Use a decoder after normals encoder  | The decoder directly predicts normals. These normals are compared with normals calculated from ground truth to drive the supervised learning.                 |
+| `architecture1+` | Intermediate architecture | This architecture contains deeper XOLP and normals encoders. There is no joint encoder, all features are concatenated and directly pushed into depth decoder. |
+
+## Training
+Here are training instructions
+
+## Evaluation
+Here are evaluation instructions
+
+## Final Presentation
+Maybe add final presentation slides here as well.
+
+# The rest
+the rest from here is the templated, old content. keeping it for now.
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 
 To make it easy for you to get started with GitLab, here's a list of recommended next steps.
 
