@@ -1,105 +1,145 @@
-# Depth from Polarization
+# Polarimetric Depth Estimation
 ***
 
-## 3D Pointcloud Demonstration
+## Introduction
+
+Welcome to the repository of our project on Polarimetric Depth Estimation!
+
+We present a supervised monocular depth prediction model leveraging polarimetric characteristics of light.
+During the model development, particular emhasis was put on improvement of the depth estimation for photometrically challenging objects.
+
+For details about the project, architecture design and ablation study have a look at our [final presentation]("").
+
+For description of the branches, check the [corresponding section](#training).
+
+todo: add an attractive image representing depth from polarization.
+
+
+## Dataset
+
+For the training and tests we used the [HAMMER](https://arxiv.org/abs/2205.04565) dataset.
+
+## Installation (dependencies)
+
+todo
+
+## Branches
+
+Since we have different versions of our architecture,
+we assigned a different branch for each version. To use a specific version, simply check 
+out to the corresponding branch of the architecture.
+
+| Branch  | Architecture                                    | Information                                                                                                                                                   |
+|---------|-------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `main`    | Final architecture                              | The architecture we present as our final. This is the architecture we ran our ablation studies on.                                                            |
+| `attention` | Best quantitative results on objects            | This architecture enhances the main architecture by using attention after combining modalities.                                                               |
+| `separate_normals_decoder`| An additional decoder after the normals encoder | The decoder directly predicts normals. These normals are compared with normals calculated from ground truth to drive the supervised learning.                 |
+| `architecture1+` | Intermediate architecture                       | This architecture contains deeper XOLP and normals encoders. There is no joint encoder, all features are concatenated and directly pushed into depth decoder. |
+
+
+## Training
+To train the network, run
+```
+bash train_supervised_GT.sh
+```
+Beforehand, specify the parameters in `train_supervised_GT.sh`, among others:
+
+- `data_path` - path to training and validation data
+- `data_val_path` - path to test data
+- `log_dir` - path to model and results' logs
+- `augment_xolp` - turning on the xolp encoder
+- `augment_normals` - turning on the normals encoder
+- `normals_loss_weight` - weight of normals loss in relation to other losses
+
+## Evaluation
+For inference on test data, run
+```
+python evaluation_main.py
+```
+located in the `manydepth` folder.
+
+Beforehand, in evaluation.py specify, among others:
+
+- `data_path_val`- path to test data
+- `run_name` - name of the log folder
+- `mono_weights_folder` - path to the weights folder
+- `augment_xolp` - turning on the xolp encoder
+- `augment_normals` - turning on the normals encoder
+- `scales` - scales used for the loss calculation
+
+Additionally, for the saved predictions and corresponding ground truths, visual analysis can be performed 
+using the Jupyter Notebook `visual_analysis.ipynb` from the `analysis_2d` folder.
+
+
+
+## 3D Point Cloud
 
 ### Description
-The example scene used for the pointcloud here is defined in the 
-"HAMMER_pointcloud/test_files.txt" file. 
-The possible scenes from HAMMER Dataset are:
- - scene12_traj2_2
- - scene13_traj2_1
- - scene14_traj2_1
+An exemplary scene used for the point cloud generation here is defined in the 
+`HAMMER_pointcloud/test_files.txt` file. 
+It cn be generated for the following test sequences:
+ - `scene12_traj2_2`
+ - `scene13_traj2_1`
+ - `scene14_traj2_1`
 
-Use one scene only per run to ensure you get the pointcloud for that scene only.
+Use only one scene per run to ensure you get the point cloud for that particular scene.
  
 ### Installation
-Libraries "PIL.Image" and "open3d" need to be installed to your environment additionally to the built-in Python methods used.
-Make sure "manydepth" environment is activated by "conda activate manydepth" before running.
+Libraries `PIL.Image` and `open3d` need to be installed to your environment additionally.
+Before running, make sure `manydepth` environment is activated by `conda activate manydepth`.
 
 ### Usage
-Running the script by the following commands in terminal allows to see the pointclouds for each architecture version for
-predicted and ground truth depth (first one is RGB only) :
-
- - python3 eval_pointcloud_main.py 
- - python3 eval_pointcloud_main.py --use_xolp True
- - python3 eval_pointcloud_main.py --use_normals True
- - python3 eval_pointcloud_main.py --use_xolp True --use_normals True 
-
-
- - see the TODO's in the "eval_pointcloud.py" for further details
+To display point clouds for the full version of the architecture, run
+```
+python3 eval_pointcloud_main.py --use_xolp True --use_normals True
+```
+To leave out XOLP or normals encoders, set corresponding flags to `False`.
+See the TODO's in the `eval_pointcloud.py` for further details.
 
 ### Support
-For questions refer to "ge64jaq@tum.de"
+For questions refer to *ge64jaq@tum.de*.
 
-### Contributing
-Training a network solely based on "nearest" interpolation for image scaling may help reduce the pixels at object boundaries.
+### Extension
+Training the network solely based on the "nearest" interpolation for image scaling may help reduce the pixels at object boundaries.
 
 ***
 
-## 2D Depth Value "AR" Demonstration
+## AR Demonstration
 
 ### Description
-The example scene used for the demo here is the Scene12_traj2_2 from HAMMER Dataset
+For the demo below `scene12_traj2_2` was used.
 
 ### Visuals
 ![](ar_visualization/output/depth_check.gif)
 
 ### Installation
-Libraries "PIL.Image" and "cv2" need to be installed to your environment additionally to the built-in Python methods used 
-Make sure "manydepth" environment is activated by "conda activate manydepth" before running.
+Libraries `PIL.Image` and `cv2` need to be installed to your environment additionally.
+Before running, make sure `manydepth` environment is activated by `conda activate manydepth`.
 
 ### Usage
-Basically getting the required images (depth_gt, depth_prediction, rgb_img and object_mask) in the data folder for an another scene is sufficient. 
-This can be done easily by copying the images saved in "pointcloud/data/images" after the inference.
-Afterwards the paths are be defined at the start of the main script for the new scene.
+To create an AR demo for another scene, first, collect the required data (depth_gt, depth_prediction, rgb_img and object_mask)
+and save it in `pointcloud/data/images`. Afterwards, the desired paths should be defined at the beginning of the main script
+for the new scene. It is important to have the depth images in the `uint8` format!
 
-It is important to have the depth images in "uint8" format!
+Run the script by
+```
+python3 main.py
+```
+The resulting gif can be opened with built-in Ubuntu image viewers.
+Some additional adjustments might be needed to get a reasonable AR demo - see the TODO's in the code.
 
-By running the main script you should be able to get a new gif with the predefined one directional trajectory. Some additional adjustments might be needed to get a reasonable gif. See the TODO's in the code.
 
- - python3 main.py
-
-The resulting gif can be opened with the in-built ubuntu image viewers. 
 
 ### Support
-For questions refer to "ge64jaq@tum.de"
+For questions refer to *ge64jaq@tum.de*.
 
 ***
+***
+***
 
-## TEMPLATE 
-
-## Introduction
-
-todo: add a gif from demonstration, or an attractive image representing depth from polarization.
-
-Welcome to our project repository! Since we have different versions of our architecture, 
-we assigned a different branch for each version. To use a specific version, simply check 
-out to the corresponding branch of the architecture.
+# TEMPLATE
 
 
-## Branches
-
-| Branch  | Architecture                         | Information                                                                                                                                                   |
-|---------|--------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `main`    | Final architecture                   | The architecture we present as our final. This is the architecture we ran our ablation studies.                                                               |
-| `attention` | Best quantitative results on objects | This architecture enhances the main architecture with use of attention after combining modalities                                                             |
-| `separate_normals_decoder`| Use a decoder after normals encoder  | The decoder directly predicts normals. These normals are compared with normals calculated from ground truth to drive the supervised learning.                 |
-| `architecture1+` | Intermediate architecture | This architecture contains deeper XOLP and normals encoders. There is no joint encoder, all features are concatenated and directly pushed into depth decoder. |
-
-## Training
-Here are training instructions
-
-## Evaluation
-Here are evaluation instructions
-
-## Final Presentation
-Maybe add final presentation slides here as well.
-
-# The rest
-the rest from here is the templated, old content. keeping it for now.
-
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
 To make it easy for you to get started with GitLab, here's a list of recommended next steps.
