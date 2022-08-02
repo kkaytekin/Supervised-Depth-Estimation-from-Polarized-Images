@@ -14,7 +14,8 @@ python3 -m manydepth.train --png --num_depth_bins 96  --num_workers 8 --batch_si
   --depth_supervision True \
   --modality polarization \
   --depth_modality _gt \
-  --model_name Letsmakeitfinallywork_RGB \
-#  --augment_xolp \
+  --normals_loss_weight 0.35 \
+  --model_name ABLATIONS_rgb_xolp_normals \
+#  --overfit True \
 #  --augment_normals \
-#  --overfit True
+#  --augment_xolp \
