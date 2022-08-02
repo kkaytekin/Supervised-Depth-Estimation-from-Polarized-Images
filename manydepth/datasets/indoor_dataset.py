@@ -16,7 +16,7 @@ from PIL import Image  # using pillow-simd for increased speed
 # import cv2
 import glob
 
-from ..xolp import Iun_and_xolp
+from polarisation.xolp import Iun_and_xolp
 import torch
 import torch.utils.data as data
 from torchvision import transforms
