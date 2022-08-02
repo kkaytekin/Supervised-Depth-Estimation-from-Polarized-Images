@@ -7,25 +7,8 @@ import cv2
 import scipy.interpolate
 import matplotlib.pyplot as plt
 
+from pol_split_and_save import split_pol
 
-def split_pol(img):
-    """
-    :param img: 4x4 polarised image
-    :return:
-    """
-    print(img.shape)
-    split_h = np.split(img, 2, axis=1)
-    print(split_h[0].shape)
-
-    split_v0 = np.split(split_h[0], 2, axis=0)
-    split_v1 = np.split(split_h[1], 2, axis=0)
-
-    pol_00 = split_v0[0]
-    pol_10 = split_v0[1]
-    pol_01 = split_v1[0]
-    pol_11 = split_v1[1]
-
-    return pol_00, pol_10, pol_01, pol_11
 
 def Iun_and_xolp(images, angles):
     """
