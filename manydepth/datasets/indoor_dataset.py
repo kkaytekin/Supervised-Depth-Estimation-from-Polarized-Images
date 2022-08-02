@@ -20,12 +20,6 @@ from ..xolp import Iun_and_xolp
 import torch
 import torch.utils.data as data
 from torchvision import transforms
-import matplotlib.pyplot as plt
-from manydepth.utils import readlines
-
-
-# cv2.setNumThreads(0)
-
 
 def pil_loader(path, version="color"):
     # open path as file to avoid ResourceWarning
@@ -88,7 +82,8 @@ class IndoorDataset(data.Dataset):
             self.frame_idxs = frame_idxs
 
         self.is_train = is_train
-        self.enable_12channels = False  # if True, inputs "color_aug" include 4 concatenated polarised images (12 channels)
+        self.enable_12channels = False  # if True, inputs "color_aug" include 4 concatenated polarised images (12 channels);
+                                        # to use it, the rgb encoder has to be adjusted to accept a 12-channel input
 
         self.loader = pil_loader
         self.to_tensor = transforms.ToTensor()
@@ -433,12 +428,15 @@ class IndoorDataset(data.Dataset):
             print(index, folder, frame_index)
 
     def get_xolp(self, inputs, i):
+        """
+        Calculate and concatenate DOLP and AOLP
+        """
         angles = np.array([0, 45, 90, 135]) * np.pi / 180
         im00 = np.asarray(inputs[("pol00_gray", i, 0)])  # 0 deg
         im10 = np.asarray(inputs[("pol10_gray", i, 0)])  # 90 deg
         im01 = np.asarray(inputs[("pol01_gray", i, 0)])  # 45 deg
         im11 = np.asarray(inputs[("pol11_gray", i, 0)])  # 135 deg
-        im_stack = np.stack((im00, im01, im10, im11), axis=2)  # correct, 320x480x4
+        im_stack = np.stack((im00, im01, im10, im11), axis=2)  # self.hight x self.width x 4
         _, dolp, aolp = Iun_and_xolp(im_stack, angles)
         xolp = np.stack((dolp, aolp), axis=2)
         inputs[("xolp", i, 0)] = self.to_tensor(xolp)
