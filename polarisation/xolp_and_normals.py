@@ -121,9 +121,9 @@ def main():
     n = 1.5
 
     # print(img_example.shape) # [1664, 2176]
-    im00, im10, im01, im11 = split_pol(img_example)  # 0, 45, 90, 135 deg
+    im00, im10, im01, im11 = split_pol(img_example)
     # print(im0.shape) # [832, 1088]
-    im_stack = np.stack((im00, im01, im10, im11), axis=2)
+    im_stack = np.stack((im00, im01, im10, im11), axis=2)  # 0, 45, 90, 135 deg
     # print(im_stack.shape)  # [832, 1088, 4]
     # plt.imshow(im00)
     # plt.show()
