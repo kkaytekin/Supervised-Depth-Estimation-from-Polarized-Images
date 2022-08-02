@@ -1,11 +1,10 @@
+"""
+The script is used for mean and std computations of DOLP and AOLP, using a chosen set of images.
+The statistics are used for standardisation of the XOLP encoder input.
+"""
+
 import os
 import numpy as np
-import torch
-import cv2
-import scipy.interpolate
-import matplotlib.pyplot as plt
-from PIL import Image
-import sys
 
 def main():
 

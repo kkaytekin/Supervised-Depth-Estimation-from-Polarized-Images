@@ -1,3 +1,7 @@
+"""
+Calculate DOLP and AOLP
+"""
+
 import numpy as np
 
 

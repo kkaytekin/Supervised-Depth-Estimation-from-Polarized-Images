@@ -1,3 +1,8 @@
+"""
+The script includes polarimetric normals calculations, vectorised to a large extent.
+The functions are used in pre_encoders.py.
+"""
+
 import numpy as np
 import torch
 import scipy.interpolate
@@ -51,7 +56,6 @@ def calc_normals(phi, theta):
     N1 = (torch.cos(phi) * torch.sin(theta)).unsqueeze(dim=1)  # Bx1xHxW
     N2 = (torch.sin(phi) * torch.sin(theta)).unsqueeze(dim=1)  # Bx1xHxW
     N3 = torch.cos(theta).unsqueeze(dim=1)  # Bx1xHxW
-    #print("N3: ", N3.shape)
     N = torch.cat((N1, N2, N3), dim=1)  # Bx3xHxW
     return N
 
