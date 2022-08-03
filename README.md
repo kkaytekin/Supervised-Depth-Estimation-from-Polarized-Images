@@ -10,9 +10,9 @@
 Welcome to the repository of our project on Polarimetric Depth Estimation!
 
 We present a supervised monocular depth prediction model leveraging polarimetric characteristics of light.
-During the model development, particular emhasis was put on improvement of the depth estimation for photometrically challenging objects.
+During the model development, particular emphasis was put on improvement of the depth estimation for photometrically challenging objects.
 
-For details about the project, architecture design and ablation study, have a look at our
+For details about the project, architecture design and ablation studies, have a look at our
 [final presentation](docs/PolarimetricDepthEstimation_FinalPresentation.pdf).
 
 For description of the branches, check the corresponding section.
@@ -21,7 +21,7 @@ For description of the branches, check the corresponding section.
 
 For the training and tests we used the [HAMMER](https://arxiv.org/abs/2205.04565) dataset.
 
-## Installation (dependencies)
+## Installation
 
 todo
 
