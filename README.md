@@ -31,11 +31,11 @@ Since we have different versions of our architecture,
 we assigned a different branch for each version. To use a specific version, simply check 
 out to the corresponding branch of the architecture.
 
-| Branch  | Architecture                                    | Information                                                                                                                                                   |
-|---------|-------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `main`    | Final architecture                              | The architecture we present as our final. This is the architecture we ran our ablation studies on.                                                            |
-| `attention` | Best quantitative results on objects            | This architecture enhances the main architecture by using attention after combining modalities.                                                               |
-| `separate_normals_decoder`| An additional decoder after the normals encoder | The decoder directly predicts normals. These normals are compared with normals calculated from ground truth to drive the supervised learning.                 |
+| Branch                     | Architecture                                    | Information                                                                                                                                                   |
+|----------------------------|-------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `main`                     | Final architecture                              | The architecture we present as our final. This is the architecture we ran our ablation studies on.                                                            |
+| `arch1++_attention`        | Best quantitative results on objects            | This architecture enhances the main architecture by using attention after combining modalities.                                                               |
+| `arch1++_separate_normals_dec` | An additional decoder after the normals encoder | The decoder directly predicts normals. These normals are compared with normals calculated from ground truth to drive the supervised learning.                 |
 
 
 ## Training
