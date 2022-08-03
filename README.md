@@ -36,7 +36,6 @@ out to the corresponding branch of the architecture.
 | `main`    | Final architecture                              | The architecture we present as our final. This is the architecture we ran our ablation studies on.                                                            |
 | `attention` | Best quantitative results on objects            | This architecture enhances the main architecture by using attention after combining modalities.                                                               |
 | `separate_normals_decoder`| An additional decoder after the normals encoder | The decoder directly predicts normals. These normals are compared with normals calculated from ground truth to drive the supervised learning.                 |
-| `architecture1+` | Intermediate architecture                       | This architecture contains deeper XOLP and normals encoders. There is no joint encoder, all features are concatenated and directly pushed into depth decoder. |
 
 
 ## Training
@@ -137,7 +136,7 @@ For questions refer to *ge64jaq@tum.de*.
 ***
 ***
 
-# TEMPLATE
+# [TEMPLATE - not used]
 
 
 
