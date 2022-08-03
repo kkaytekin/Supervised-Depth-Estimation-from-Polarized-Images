@@ -3,6 +3,10 @@
 
 ## Introduction
 
+<div style="text-align: center">
+  <img src="docs/depth_gt_example.png" width="450"/>
+</div>
+
 Welcome to the repository of our project on Polarimetric Depth Estimation!
 
 We present a supervised monocular depth prediction model leveraging polarimetric characteristics of light.
@@ -10,7 +14,7 @@ During the model development, particular emhasis was put on improvement of the d
 
 For details about the project, architecture design and ablation study have a look at our [final presentation]("").
 
-For description of the branches, check the [corresponding section](#training).
+For description of the branches, check the corresponding section.
 
 todo: add an attractive image representing depth from polarization.
 
@@ -102,15 +106,13 @@ For questions refer to *ge64jaq@tum.de*.
 ### Extension
 Training the network solely based on the "nearest" interpolation for image scaling may help reduce the pixels at object boundaries.
 
-***
-
 ## AR Demonstration
+<div style="text-align: center">
+  <img src="ar_visualization/output/depth_check.gif" alt="animated" width="450"/>
+</div>
 
 ### Description
-For the demo below `scene12_traj2_2` was used.
-
-### Visuals
-![](ar_visualization/output/depth_check.gif)
+For the demo above `scene12_traj2_2` was used.
 
 ### Installation
 Libraries `PIL.Image` and `cv2` need to be installed to your environment additionally.
