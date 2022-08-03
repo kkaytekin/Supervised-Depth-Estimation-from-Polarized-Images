@@ -16,6 +16,6 @@ python3 -m manydepth.train --png --num_depth_bins 96  --num_workers 8 --batch_si
   --depth_modality _gt \
   --normals_loss_weight 0.35 \
   --model_name ABLATIONS_rgb_xolp_normals \
-#  --augment_xolp \
-#  --augment_normals \
+  --augment_xolp \
+  --augment_normals \
 #  --overfit True \
