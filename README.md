@@ -12,12 +12,10 @@ Welcome to the repository of our project on Polarimetric Depth Estimation!
 We present a supervised monocular depth prediction model leveraging polarimetric characteristics of light.
 During the model development, particular emhasis was put on improvement of the depth estimation for photometrically challenging objects.
 
-For details about the project, architecture design and ablation study have a look at our [final presentation]("").
+For details about the project, architecture design and ablation study, have a look at our
+[final presentation](docs/PolarimetricDepthEstimation_FinalPresentation.pdf).
 
 For description of the branches, check the corresponding section.
-
-todo: add an attractive image representing depth from polarization.
-
 
 ## Dataset
 
