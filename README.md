@@ -23,7 +23,21 @@ For the training and tests we used the [HAMMER](https://arxiv.org/abs/2205.04565
 
 ## Installation
 
-todo
+In order to run the code, the dependencies need to be installed first.
+This can be done by creating a conda environment from the `environment.yml` provided in the repository root.
+
+Open a terminal in the root folder of the repository and run:
+
+```commandline
+conda env create -f environment.yml
+conda activate depthfrompol
+```
+
+The scripts mentioned in the following sections need to be run after the environment `depthfrompol` is activated.
+If the environment is not activate, simply run:
+```commandline
+conda activate depthfrompol
+```
 
 ## Branches
 
