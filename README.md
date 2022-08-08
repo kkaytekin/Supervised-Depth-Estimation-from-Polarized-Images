@@ -17,14 +17,16 @@ For details about the project, architecture design and ablation studies, have a 
 
 For description of the branches, check the corresponding section.
 
+
 ## Dataset
 
-For the training and tests we used the [HAMMER](https://arxiv.org/abs/2205.04565) dataset.
+For training and tests we used the [HAMMER](https://arxiv.org/abs/2205.04565) dataset.
+
 
 ## Installation
 
-In order to run the code, the dependencies need to be installed first.
-This can be done by creating a conda environment from the `environment.yml` provided in the repository root.
+In order to run the code, dependencies need to be installed first.
+This can be done by creating a conda environment using the `environment.yml` provided in the repository root.
 
 Open a terminal in the root folder of the repository and run:
 
@@ -33,16 +35,16 @@ conda env create -f environment.yml
 conda activate depthfrompol
 ```
 
-The scripts mentioned in the following sections need to be run after the environment `depthfrompol` is activated.
-If the environment is not activate, simply run:
+Before running the scripts mentioned in the following sections activate environment `depthfrompol` using:
 ```commandline
 conda activate depthfrompol
 ```
 
+
 ## Branches
 
 Since we have different versions of our architecture,
-we assigned a different branch for each version. To use a specific version, simply check 
+we assigned a separate branch for each version. To use a specific version, simply check 
 out to the corresponding branch of the architecture.
 
 | Branch                     | Architecture                                    | Information                                                                                                                                                   |
@@ -53,7 +55,7 @@ out to the corresponding branch of the architecture.
 
 
 ## Training
-To train the network, run
+To train the network run:
 ```
 bash train_supervised_GT.sh
 ```
@@ -66,8 +68,9 @@ Beforehand, specify the parameters in `train_supervised_GT.sh`, among others:
 - `augment_normals` - turning on the normals encoder
 - `normals_loss_weight` - weight of normals loss in relation to other losses
 
+
 ## Evaluation
-For inference on test data, run
+For inference on test data run:
 ```
 python evaluation_main.py
 ```
@@ -86,13 +89,12 @@ Additionally, for the saved predictions and corresponding ground truths, visual 
 using the Jupyter Notebook `visual_analysis.ipynb` from the `analysis_2d` folder.
 
 
-
 ## 3D Point Cloud
 
 ### Description
 An exemplary scene used for the point cloud generation here is defined in the 
 `HAMMER_pointcloud/test_files.txt` file. 
-It cn be generated for the following test sequences:
+It can be generated for the following test sequences:
  - `scene12_traj2_2`
  - `scene13_traj2_1`
  - `scene14_traj2_1`
@@ -100,22 +102,19 @@ It cn be generated for the following test sequences:
 Use only one scene per run to ensure you get the point cloud for that particular scene.
  
 ### Installation
-Libraries `PIL.Image` and `open3d` need to be installed to your environment additionally.
-Before running, make sure `manydepth` environment is activated by `conda activate manydepth`.
+Library `open3d` (recommended version: 0.12) needs to be installed to your environment additionally.
 
 ### Usage
-To display point clouds for the full version of the architecture, run
+To display point clouds for the version of the architecture including 3 separate shallow encoders, 
+open the `pointcloud` folder, modify the paths and parameters in `eval_pointcloud.py` and run:
 ```
 python3 eval_pointcloud_main.py --use_xolp True --use_normals True
 ```
 To leave out XOLP or normals encoders, set corresponding flags to `False`.
-See the TODO's in the `eval_pointcloud.py` for further details.
 
 ### Support
 For questions refer to *ge64jaq@tum.de*.
 
-### Extension
-Training the network solely based on the "nearest" interpolation for image scaling may help reduce the pixels at object boundaries.
 
 ## AR Demonstration
 <div style="text-align: center">
@@ -126,22 +125,20 @@ Training the network solely based on the "nearest" interpolation for image scali
 For the demo above `scene12_traj2_2` was used.
 
 ### Installation
-Libraries `PIL.Image` and `cv2` need to be installed to your environment additionally.
-Before running, make sure `manydepth` environment is activated by `conda activate manydepth`.
+Before running, make sure the `depthfrompol` environment is activated by `conda activate depthfrompol`.
+Additionally, downgrading numpy to 1.15.4 is recommended.
 
 ### Usage
 To create an AR demo for another scene, first, collect the required data (depth_gt, depth_prediction, rgb_img and object_mask)
 and save it in `pointcloud/data/images`. Afterwards, the desired paths should be defined at the beginning of the main script
-for the new scene. It is important to have the depth images in the `uint8` format!
+for the new scene. Make sure the depth images are in the `uint8` format.
 
-Run the script by
+Open the `ar_visualization` folder and run the script by:
 ```
 python3 main.py
 ```
 The resulting gif can be opened with built-in Ubuntu image viewers.
-Some additional adjustments might be needed to get a reasonable AR demo - see the TODO's in the code.
-
-
+Some additional adjustments might be necessary to get a reasonable AR demo - see comments in the code.
 
 ### Support
 For questions refer to *ge64jaq@tum.de*.
