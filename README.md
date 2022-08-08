@@ -17,9 +17,11 @@ For details about the project, architecture design and ablation studies, have a 
 
 For description of the branches, check the corresponding section.
 
+
 ## Dataset
 
 For training and tests we used the [HAMMER](https://arxiv.org/abs/2205.04565) dataset.
+
 
 ## Installation
 
@@ -37,6 +39,7 @@ Before running the scripts mentioned in the following sections activate environm
 ```commandline
 conda activate depthfrompol
 ```
+
 
 ## Branches
 
@@ -65,6 +68,7 @@ Beforehand, specify the parameters in `train_supervised_GT.sh`, among others:
 - `augment_normals` - turning on the normals encoder
 - `normals_loss_weight` - weight of normals loss in relation to other losses
 
+
 ## Evaluation
 For inference on test data run:
 ```
@@ -83,7 +87,6 @@ Beforehand, in evaluation.py specify, among others:
 
 Additionally, for the saved predictions and corresponding ground truths, visual analysis can be performed 
 using the Jupyter Notebook `visual_analysis.ipynb` from the `analysis_2d` folder.
-
 
 
 ## 3D Point Cloud
@@ -112,6 +115,7 @@ To leave out XOLP or normals encoders, set corresponding flags to `False`.
 ### Support
 For questions refer to *ge64jaq@tum.de*.
 
+
 ## AR Demonstration
 <div style="text-align: center">
   <img src="ar_visualization/output/depth_check.gif" alt="animated" width="450"/>
@@ -135,8 +139,6 @@ python3 main.py
 ```
 The resulting gif can be opened with built-in Ubuntu image viewers.
 Some additional adjustments might be necessary to get a reasonable AR demo - see comments in the code.
-
-
 
 ### Support
 For questions refer to *ge64jaq@tum.de*.
